@@ -1187,7 +1187,7 @@
                     <span class="text-xs font-extrabold text-violet-300">1 Класс</span>
                 </div>
 
-                <!-- Счётчик "Стрик" (🔥) + Баланс монет (💰) + Магазин (🛍️) -->
+                <!-- Счётчик "Стрик" (🔥) + Баланс монет (💰) + Аватар питомца (🦊) -->
                 <div class="flex items-center gap-2">
                     <div id="streak-header-container"
                         class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/30 shadow-[0_0_20px_rgba(249,115,22,0.15)] pulse-streak">
@@ -1204,6 +1204,12 @@
                         <span class="text-xs font-extrabold text-amber-400 coins-badge">0</span>
                         <span class="text-[11px] font-black text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded-lg border border-amber-300 shadow-sm flex items-center gap-1 hover:bg-amber-300 transition-colors">🛍️</span>
                     </div>
+                    <!-- Круглая иконка аватара питомца в верхнем правом углу хедера -->
+                    <button id="header-pet-avatar" onclick="openShopModal()"
+                        class="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600/40 to-indigo-600/40 border border-violet-400/50 flex items-center justify-center text-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+                        title="Мой питомец / Магазин">
+                        <span id="header-pet-emoji">🦊</span>
+                    </button>
                 </div>
             </header>
 
@@ -1711,53 +1717,8 @@
                     </div>
                 </div>
 
-                <!-- Товар 2: Робо-Кот (Скоро) -->
-                <div class="bg-slate-900/60 border border-purple-500/20 rounded-2xl p-3.5 flex flex-col gap-2 opacity-80 relative overflow-hidden">
-                    <div class="absolute top-2 right-2 px-2 py-0.5 bg-purple-500/20 border border-purple-400/30 rounded-full text-[10px] font-black text-purple-300 flex items-center gap-1">
-                        🔒 Скоро
-                    </div>
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-11 h-11 rounded-xl bg-purple-900/40 border border-purple-500/30 flex items-center justify-center text-2xl">
-                            🐱⚡
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-extrabold text-purple-200">Робо-Кот</h4>
-                            <p class="text-[11px] font-bold text-slate-400 leading-tight">Неоновый питомец-помощник</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
-                        <div class="text-xs font-black text-amber-400 flex items-center gap-1">
-                            <span>200</span> <span>💰</span>
-                        </div>
-                        <button disabled class="px-3 py-1.5 bg-slate-800 text-slate-400 font-extrabold text-xs rounded-xl cursor-not-allowed opacity-60">
-                            Скоро
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Товар 3: Неоновый Дракон (Скоро) -->
-                <div class="bg-slate-900/60 border border-indigo-500/20 rounded-2xl p-3.5 flex flex-col gap-2 opacity-80 relative overflow-hidden">
-                    <div class="absolute top-2 right-2 px-2 py-0.5 bg-indigo-500/20 border border-indigo-400/30 rounded-full text-[10px] font-black text-indigo-300 flex items-center gap-1">
-                        🔒 Скоро
-                    </div>
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-11 h-11 rounded-xl bg-indigo-900/40 border border-indigo-500/30 flex items-center justify-center text-2xl">
-                            🐉✨
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-extrabold text-indigo-200">Неоновый Дракон</h4>
-                            <p class="text-[11px] font-bold text-slate-400 leading-tight">Легендарный космический дракон</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
-                        <div class="text-xs font-black text-amber-400 flex items-center gap-1">
-                            <span>500</span> <span>💰</span>
-                        </div>
-                        <button disabled class="px-3 py-1.5 bg-slate-800 text-slate-400 font-extrabold text-xs rounded-xl cursor-not-allowed opacity-60">
-                            Скоро
-                        </button>
-                    </div>
-                </div>
+                <!-- Секция питомцев магазина (Динамическая интеграция) -->
+                <div id="shop-pets-container" class="flex flex-col gap-3"></div>
 
             </div>
 
@@ -1795,6 +1756,32 @@
         let streakFreeze = localStorage.getItem('streakFreeze') !== null ? parseInt(localStorage.getItem('streakFreeze'), 10) : 0;
         if (isNaN(streakFreeze) || streakFreeze < 0) streakFreeze = 0;
         if (streakFreeze > 2) streakFreeze = 2;
+
+        // --- МОДЕЛЬ ДАННЫХ ПИТОМЦЕВ И ХРАНИЛИЩЕ ---
+        const PETS = {
+            fox: { id: 'fox', emoji: '🦊', name: 'Кибер-Лис', description: 'Хитрый и быстрый', price: 0 },
+            cat: { id: 'cat', emoji: '🐱', name: 'Робо-Кот', description: 'Точный и внимательный', price: 200 },
+            dragon: { id: 'dragon', emoji: '🐲', name: 'Неоновый Дракон', description: 'Непобедимый чемпион', price: 500 }
+        };
+
+        let unlockedPets = [];
+        try {
+            const storedUnlocked = localStorage.getItem('unlockedPets');
+            unlockedPets = storedUnlocked ? JSON.parse(storedUnlocked) : ['fox'];
+        } catch (e) {
+            unlockedPets = ['fox'];
+        }
+        if (!Array.isArray(unlockedPets) || unlockedPets.length === 0) {
+            unlockedPets = ['fox'];
+        }
+        if (!unlockedPets.includes('fox')) {
+            unlockedPets.push('fox');
+        }
+
+        let activePet = localStorage.getItem('activePet') || 'fox';
+        if (!PETS[activePet] || !unlockedPets.includes(activePet)) {
+            activePet = 'fox';
+        }
         let dailySolved = 0;
         const DAILY_GOAL = 10;
         let currentProblem = null;
@@ -2454,6 +2441,9 @@
         const unlockModalBtn = document.getElementById('unlock-modal-btn');
 
         function getActiveChar() {
+            if (typeof PETS !== 'undefined' && PETS[activePet]) {
+                return PETS[activePet];
+            }
             return CHARACTERS.find(c => c.id === activeCharId) || CHARACTERS[0];
         }
 
@@ -2465,6 +2455,12 @@
         function updateCharacterDisplay() {
             const ch = getActiveChar();
             const acc = getEquippedAccessory();
+
+            // Аватар в хедере
+            const headerPetEmoji = document.getElementById('header-pet-emoji');
+            if (headerPetEmoji) {
+                headerPetEmoji.textContent = ch.emoji;
+            }
 
             // Аватары в шапках
             petAvatarBtns.forEach(btn => {
@@ -2513,6 +2509,10 @@
             const gameCharStatus = document.getElementById('game-char-status');
             if (gameCharName) gameCharName.textContent = ch.name;
             if (gameCharStatus) gameCharStatus.textContent = ch.description || 'Уровень 1 • Исследователь';
+        }
+
+        function updatePetDisplay() {
+            updateCharacterDisplay();
         }
 
         // Сбросить glow у эмодзи персонажа
@@ -2926,6 +2926,97 @@
                     btnBuyShield.textContent = 'Купить за 50 🪙';
                 }
             }
+
+            updateShopPetsUI();
+        }
+
+        function updateShopPetsUI() {
+            const container = document.getElementById('shop-pets-container');
+            if (!container) return;
+
+            const petList = [PETS.fox, PETS.cat, PETS.dragon];
+            
+            container.innerHTML = petList.map(pet => {
+                const isUnlocked = unlockedPets.includes(pet.id);
+                const isActive = activePet === pet.id;
+                const canAfford = coins >= pet.price;
+
+                let buttonHtml = '';
+                if (isActive) {
+                    buttonHtml = `<button disabled class="px-3.5 py-1.5 bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-black text-xs rounded-xl shadow-sm flex items-center gap-1 cursor-default">
+                        ✓ Выбран
+                    </button>`;
+                } else if (isUnlocked) {
+                    buttonHtml = `<button onclick="selectPet('${pet.id}')" class="px-3.5 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-md active:scale-95 transition-all cursor-pointer border border-violet-400/40">
+                        Выбрать
+                    </button>`;
+                } else {
+                    const disabled = !canAfford;
+                    buttonHtml = `<button ${disabled ? 'disabled' : ''} onclick="buyPet('${pet.id}')" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black text-xs rounded-xl shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-400 border border-amber-300/40">
+                        Купить за ${pet.price} 🪙
+                    </button>`;
+                }
+
+                const borderClass = isActive 
+                    ? 'border-emerald-500/60 bg-emerald-950/20' 
+                    : (isUnlocked ? 'border-violet-500/40 bg-slate-900/90 hover:border-violet-400/70' : 'border-slate-700/60 bg-slate-900/60');
+
+                return `
+                    <div class="bg-slate-900/90 border-2 ${borderClass} rounded-2xl p-3.5 flex flex-col gap-2.5 shadow-lg transition-all relative overflow-hidden text-left">
+                        ${isActive ? `<span class="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/40 rounded-full text-[10px] font-black text-emerald-300">Активен</span>` : ''}
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-600/30 border border-violet-400/40 flex items-center justify-center text-2xl shadow-inner">
+                                ${pet.emoji}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-extrabold text-violet-200">${pet.name}</h4>
+                                <p class="text-[11px] font-bold text-slate-400 leading-tight">${pet.description}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
+                            <div class="text-xs font-black text-amber-400 flex items-center gap-1">
+                                ${pet.price === 0 ? '<span class="text-emerald-400 font-extrabold">Бесплатно</span>' : `<span>${pet.price}</span> <span>💰</span>`}
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function buyPet(petId) {
+            const pet = PETS[petId];
+            if (!pet || unlockedPets.includes(petId) || coins < pet.price) return;
+
+            coins -= pet.price;
+            unlockedPets.push(petId);
+            activePet = petId;
+
+            localStorage.setItem('coins', coins);
+            localStorage.setItem('unlockedPets', JSON.stringify(unlockedPets));
+            localStorage.setItem('activePet', activePet);
+
+            updateCoinsAndStreak();
+            updateShopModalUI();
+            updateCharacterDisplay();
+
+            haptic('success');
+            if (typeof playSound === 'function') playSound('correct');
+            if (typeof confetti !== 'undefined' && confetti.explode) confetti.explode();
+        }
+
+        function selectPet(petId) {
+            const pet = PETS[petId];
+            if (!pet || !unlockedPets.includes(petId)) return;
+
+            activePet = petId;
+            localStorage.setItem('activePet', activePet);
+
+            updateShopModalUI();
+            updateCharacterDisplay();
+
+            haptic('light');
+            if (typeof playSound === 'function') playSound('click');
         }
 
         function openShopModal() {
@@ -4897,6 +4988,9 @@
             window.updateCardRank = updateCardRank;
             window.openShopModal = openShopModal;
             window.closeShopModal = closeShopModal;
+            window.buyPet = buyPet;
+            window.selectPet = selectPet;
+            window.updatePetDisplay = updatePetDisplay;
             window.buyStreakFreezeShield = buyStreakFreezeShield;
             window.closeShieldSavedModal = closeShieldSavedModal;
             window.showShieldSavedModal = showShieldSavedModal;
