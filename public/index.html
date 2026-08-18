@@ -1628,10 +1628,37 @@
 
             <!-- Счётчик решённых -->
             <div
-                class="flex items-center justify-center gap-2 py-2 px-4 rounded-2xl bg-white border border-violet-100 shadow-sm mb-4">
+                class="flex items-center justify-center gap-2 py-2 px-4 rounded-2xl bg-white border border-violet-100 shadow-sm mb-3">
                 <span class="text-2xl">⭐</span>
                 <span class="text-sm font-bold text-slate-600">Решено примеров: <span id="total-solved-display"
                         class="text-violet-700 font-black">0</span></span>
+            </div>
+
+            <!-- СЕКЦИЯ БУСТЕРОВ & МАГАЗИНА (Заморозка Стрика) -->
+            <div class="w-full bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 border-2 border-cyan-500/40 rounded-3xl p-3.5 flex flex-col gap-3 shadow-xl mb-4 text-left">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400/20 to-blue-600/30 border border-cyan-400/40 flex items-center justify-center text-2xl shadow-inner shrink-0">
+                            🛡️
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-extrabold text-cyan-200">Щит заморозки стрика</h4>
+                            <p class="text-[11px] font-bold text-slate-400 leading-tight">Спасает стрик при пропуске 1 дня</p>
+                        </div>
+                    </div>
+                    <span id="collection-shield-count-badge" class="px-2.5 py-1 bg-cyan-500/20 border border-cyan-400/40 rounded-full text-xs font-black text-cyan-300 whitespace-nowrap">
+                        0 / 2
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                    <div class="text-xs font-black text-amber-400 flex items-center gap-1">
+                        <span>50</span> <span>💰</span>
+                    </div>
+                    <button id="btn-buy-shield-collection" onclick="buyStreakFreezeShield()"
+                        class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-extrabold text-xs rounded-xl shadow-md active:scale-95 transition-all cursor-pointer border border-cyan-300/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-400">
+                        Купить за 50 🪙
+                    </button>
+                </div>
             </div>
 
             <!-- Сетка персонажей (динамически рендерится JS) -->
@@ -1752,36 +1779,30 @@
         // Инициализация игры
         let currentRuleType = 'over_ten'; // По умолчанию переход через десяток
         let coins = localStorage.getItem('coins') !== null ? parseInt(localStorage.getItem('coins'), 10) : 15;
-        let streak = localStorage.getItem('streak') !== null ? parseInt(localStorage.getItem('streak'), 10) : 3;
+        let streak = localStorage.getItem('streak') !== null ? parseInt(localStorage.getItem('streak'), 10) : 1;
+        if (isNaN(streak) || streak < 1) streak = 1;
         let streakFreeze = localStorage.getItem('streakFreeze') !== null ? parseInt(localStorage.getItem('streakFreeze'), 10) : 0;
         if (isNaN(streakFreeze) || streakFreeze < 0) streakFreeze = 0;
         if (streakFreeze > 2) streakFreeze = 2;
 
-        // --- МОДЕЛЬ ДАННЫХ ПИТОМЦЕВ И ХРАНИЛИЩЕ ---
-        const PETS = {
-            fox: { id: 'fox', emoji: '🦊', name: 'Кибер-Лис', description: 'Хитрый и быстрый', price: 0 },
-            cat: { id: 'cat', emoji: '🐱', name: 'Робо-Кот', description: 'Точный и внимательный', price: 200 },
-            dragon: { id: 'dragon', emoji: '🐲', name: 'Неоновый Дракон', description: 'Непобедимый чемпион', price: 500 }
-        };
+        // --- ЕДИНЫЙ ИСТОЧНИК ПРАВДЫ ДЛЯ АКТИВНОГО ПИТОМЦА / ГЕРОЯ ---
+        let selectedPet = localStorage.getItem('selectedPet') || localStorage.getItem('activePet') || localStorage.getItem('activeCharacter') || 'fox';
 
         let unlockedPets = [];
         try {
             const storedUnlocked = localStorage.getItem('unlockedPets');
-            unlockedPets = storedUnlocked ? JSON.parse(storedUnlocked) : ['fox'];
+            unlockedPets = storedUnlocked ? JSON.parse(storedUnlocked) : ['fox', 'robik'];
         } catch (e) {
-            unlockedPets = ['fox'];
+            unlockedPets = ['fox', 'robik'];
         }
         if (!Array.isArray(unlockedPets) || unlockedPets.length === 0) {
-            unlockedPets = ['fox'];
+            unlockedPets = ['fox', 'robik'];
         }
-        if (!unlockedPets.includes('fox')) {
-            unlockedPets.push('fox');
-        }
+        if (!unlockedPets.includes('fox')) unlockedPets.push('fox');
+        if (!unlockedPets.includes('robik')) unlockedPets.push('robik');
 
-        let activePet = localStorage.getItem('activePet') || 'fox';
-        if (!PETS[activePet] || !unlockedPets.includes(activePet)) {
-            activePet = 'fox';
-        }
+        let activePet = selectedPet;
+        let activeCharacter = selectedPet;
         let dailySolved = 0;
         const DAILY_GOAL = 10;
         let currentProblem = null;
@@ -2163,17 +2184,21 @@
         const badgeGoalList = document.querySelectorAll('.daily-goal-badge');
         const btnBackToHub = document.getElementById('btn-back-to-hub');
 
-        // --- СИСТЕМА ПЕРСОНАЖЕЙ (6 героев для сетки 2x3) ---
+        // --- СИСТЕМА ПЕРСОНАЖЕЙ И ПИТОМЦЕВ (ЕДИНЫЙ СПИСОК ГЕРОЕВ) ---
         const CHARACTERS = [
-            { id: 'robik', emoji: '🤖', name: 'Робик', unlockAt: 0, description: 'Твой первый друг!' },
-            { id: 'capybara', emoji: '🦫', name: 'Капибара', unlockAt: 20, description: 'Спокойный и мудрый' },
-            { id: 'cat', emoji: '🐱', name: 'Квадратный Кот', unlockAt: 50, description: 'Загадочный мастер' },
-            { id: 'fox', emoji: '🦊', name: 'Кибер-Лис', unlockAt: 100, description: 'Хитрый и быстрый' },
-            { id: 'axolotl', emoji: '🦎', name: 'Аксолотль Лотти', unlockAt: 175, description: 'Милый водный супергерой!' },
-            { id: 'dragon', emoji: '🐉', name: 'Золотой Дракон', unlockAt: 300, description: 'Легендарный повелитель математики!' }
+            { id: 'fox', emoji: '🦊', name: 'Кибер-Лис', unlockAt: 0, price: 0, description: 'Хитрый и быстрый' },
+            { id: 'cat', emoji: '🐱', name: 'Робо-Кот', unlockAt: 50, price: 200, description: 'Точный и внимательный' },
+            { id: 'dragon', emoji: '🐲', name: 'Неоновый Дракон', unlockAt: 300, price: 500, description: 'Непобедимый чемпион' },
+            { id: 'robik', emoji: '🤖', name: 'Робик', unlockAt: 0, price: 0, description: 'Твой верный друг!' },
+            { id: 'capybara', emoji: '🦫', name: 'Капибара', unlockAt: 20, price: 100, description: 'Спокойный и мудрый' },
+            { id: 'axolotl', emoji: '🦎', name: 'Аксолотль Лотти', unlockAt: 175, price: 350, description: 'Милый супергерой!' }
         ];
+
+        const HEROES_MAP = {};
+        CHARACTERS.forEach(ch => { HEROES_MAP[ch.id] = ch; });
+        const PETS = HEROES_MAP;
         let totalSolved = parseInt(localStorage.getItem('totalSolved') || '0', 10);
-        let activeCharId = localStorage.getItem('activeCharacter') || 'robik';
+        let activeCharId = selectedPet;
 
         // --- ГАРДЕРОб & RPG ИНВЕНТАРЬ (4 ТЕМАТИЧЕСКИЕ КАТЕГОРИИ) ---
         const WARDROBE_CATEGORIES = [
@@ -2440,15 +2465,46 @@
         const unlockModalName = document.getElementById('unlock-modal-name');
         const unlockModalBtn = document.getElementById('unlock-modal-btn');
 
+        function setSelectedPet(petId) {
+            if (!HEROES_MAP[petId]) return;
+            selectedPet = petId;
+            activePet = petId;
+            activeCharId = petId;
+            localStorage.setItem('selectedPet', petId);
+            localStorage.setItem('activePet', petId);
+            localStorage.setItem('activeCharacter', petId);
+
+            updateCharacterDisplay();
+            renderCollection();
+        }
+
         function getActiveChar() {
-            if (typeof PETS !== 'undefined' && PETS[activePet]) {
-                return PETS[activePet];
-            }
-            return CHARACTERS.find(c => c.id === activeCharId) || CHARACTERS[0];
+            return HEROES_MAP[selectedPet] || CHARACTERS[0];
         }
 
         function isUnlocked(char) {
+            if (!char) return false;
+            if (char.unlockAt === 0) return true;
+            if (unlockedPets.includes(char.id)) return true;
             return totalSolved >= char.unlockAt;
+        }
+
+        function buyHero(heroId) {
+            const hero = HEROES_MAP[heroId];
+            if (!hero) return;
+            if (unlockedPets.includes(heroId) || coins < hero.price) return;
+
+            coins -= hero.price;
+            unlockedPets.push(heroId);
+            setSelectedPet(heroId);
+
+            localStorage.setItem('coins', coins);
+            localStorage.setItem('unlockedPets', JSON.stringify(unlockedPets));
+
+            updateCoinsAndStreak();
+            haptic('success');
+            if (typeof playSound === 'function') playSound('correct');
+            if (typeof confetti !== 'undefined' && confetti.explode) confetti.explode();
         }
 
         // Обновить аватар в шапках и в игровой карточке
@@ -2670,7 +2726,7 @@
 
             CHARACTERS.forEach(ch => {
                 const unlocked = isUnlocked(ch);
-                const isActive = ch.id === activeCharId;
+                const isActive = ch.id === selectedPet;
                 const card = document.createElement('div');
                 card.className = 'char-card' + (isActive ? ' active-char' : '') + (!unlocked ? ' locked-char' : '');
 
@@ -2708,12 +2764,11 @@
                     const remainCount = Math.max(0, ch.unlockAt - totalSolved);
                     const word = getDeclensionWord(remainCount, ['пример', 'примера', 'примеров']);
                     descEl.className = 'text-rose-500 font-extrabold';
-                    descEl.textContent = `Осталось решить: ${remainCount} ${word}`;
+                    descEl.textContent = ch.unlockAt > 0 ? `Осталось решить: ${remainCount} ${word}` : ch.description;
                 }
                 card.appendChild(descEl);
 
                 if (unlocked) {
-                    // Шкала прогресса не нужна — показываем кнопку выбора
                     const btn = document.createElement('button');
                     btn.className = 'char-select-btn ' + (isActive ? 'btn-selected' : 'btn-select');
                     btn.textContent = isActive ? '✓ Выбран' : 'Выбрать';
@@ -2722,10 +2777,7 @@
                             e.stopPropagation();
                             haptic('light');
                             playSound('click');
-                            activeCharId = ch.id;
-                            localStorage.setItem('activeCharacter', activeCharId);
-                            updateCharacterDisplay();
-                            renderCollection();
+                            setSelectedPet(ch.id);
 
                             setTimeout(() => {
                                 if (typeof goBackFromCollection === 'function') {
@@ -2744,22 +2796,35 @@
                     }
                     card.appendChild(btn);
                 } else {
-                    // Шкала прогресса для заблокированного
-                    const pct = Math.min((totalSolved / ch.unlockAt) * 100, 100);
-                    const wrap = document.createElement('div');
-                    wrap.className = 'char-progress-wrap';
-                    const bar = document.createElement('div');
-                    bar.className = 'char-progress-bar';
-                    bar.style.width = pct + '%';
-                    wrap.appendChild(bar);
-                    card.appendChild(wrap);
+                    if (ch.unlockAt > 0) {
+                        const pct = Math.min((totalSolved / ch.unlockAt) * 100, 100);
+                        const wrap = document.createElement('div');
+                        wrap.className = 'char-progress-wrap';
+                        const bar = document.createElement('div');
+                        bar.className = 'char-progress-bar';
+                        bar.style.width = pct + '%';
+                        wrap.appendChild(bar);
+                        card.appendChild(wrap);
 
-                    const remainCount = Math.max(0, ch.unlockAt - totalSolved);
-                    const word = getDeclensionWord(remainCount, ['пример', 'примера', 'примеров']);
-                    const label = document.createElement('div');
-                    label.className = 'char-progress-label font-bold';
-                    label.innerHTML = `🔒 ${totalSolved} / ${ch.unlockAt} &bull; <span class="text-amber-500 font-extrabold">ещё ${remainCount}</span>`;
-                    card.appendChild(label);
+                        const remainCount = Math.max(0, ch.unlockAt - totalSolved);
+                        const label = document.createElement('div');
+                        label.className = 'char-progress-label font-bold';
+                        label.innerHTML = `🔒 ${totalSolved} / ${ch.unlockAt}`;
+                        card.appendChild(label);
+                    }
+
+                    if (ch.price > 0) {
+                        const canAfford = coins >= ch.price;
+                        const buyBtn = document.createElement('button');
+                        buyBtn.className = 'w-full mt-2 py-1.5 px-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black text-xs rounded-xl shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-amber-300/40';
+                        buyBtn.textContent = `Купить за ${ch.price} 🪙`;
+                        buyBtn.disabled = !canAfford;
+                        buyBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            buyHero(ch.id);
+                        });
+                        card.appendChild(buyBtn);
+                    }
                 }
 
                 collectionGrid.appendChild(card);
@@ -3020,11 +3085,9 @@
         }
 
         function openShopModal() {
-            updateShopModalUI();
-            const modal = document.getElementById('shop-modal');
-            if (modal) modal.classList.remove('hidden');
             haptic('light');
             if (typeof playSound === 'function') playSound('click');
+            openCollection('hub');
         }
 
         function closeShopModal() {
@@ -3044,7 +3107,7 @@
             localStorage.setItem('streakFreeze', streakFreeze);
 
             updateCoinsAndStreak();
-            updateShopModalUI();
+            renderCollection();
             haptic('success');
             if (typeof playSound === 'function') playSound('correct');
         }
