@@ -327,7 +327,7 @@
             border: 2px solid #ede9fe !important;
             border-radius: 24px !important;
             box-shadow: 0 8px 20px rgba(92, 22, 197, 0.04) !important;
-            transition: all 0.2s ease-in-out !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
         .topic-card *,
@@ -341,32 +341,12 @@
         [data-topic]:hover {
             transform: translateY(-4px) !important;
             border-color: #5c16c5 !important;
-            box-shadow: 0 14px 30px rgba(92, 22, 197, 0.12) !important;
+            box-shadow: 0 12px 28px rgba(92, 22, 197, 0.08) !important;
         }
 
         .topic-card:active,
         [data-topic]:active {
-            transform: scale(0.98) !important;
-        }
-
-        /* 4. Анимация "Дыхание" маскота (Легкое покачивание) */
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-6px);
-            }
-        }
-
-        .mascot-img,
-        #mascot-avatar-img,
-        #char-emoji-display,
-        #header-pet-emoji,
-        .pet-avatar-btn,
-        #exit-modal-mascot {
-            animation: float 3.5s ease-in-out infinite;
-            display: inline-block;
+            transform: translateY(0px) !important;
         }
 
         #confetti-canvas {
@@ -734,7 +714,7 @@
         }
 
         #btn-check:active {
-            transform: translateY(4px) scale(0.95) !important;
+            transform: translateY(4px) !important;
             box-shadow: 0 4px 0 #047857, 0 6px 12px rgba(16, 185, 129, 0.3) !important;
         }
 
@@ -1350,86 +1330,6 @@
             50%       { transform: scale(1.08) rotate(3deg); }
         }
 
-        /* Анимации маскотов: Прыжок радости и Отрицание */
-        @keyframes mascot-bounce {
-            0%, 100% { transform: translateY(0) scale(1); }
-            30%      { transform: translateY(-22px) scale(1.18); }
-            50%      { transform: translateY(-12px) scale(1.1); }
-            70%      { transform: translateY(-4px) scale(1.05); }
-        }
-
-        @keyframes mascot-shake {
-            0%, 100% { transform: translateX(0) rotate(0deg); }
-            15%      { transform: translateX(-10px) rotate(-6deg); }
-            30%      { transform: translateX(10px) rotate(6deg); }
-            45%      { transform: translateX(-8px) rotate(-4deg); }
-            60%      { transform: translateX(8px) rotate(4deg); }
-            75%      { transform: translateX(-4px) rotate(-2deg); }
-        }
-
-        .mascot-bounce {
-            animation: mascot-bounce 0.95s ease-in-out !important;
-        }
-
-        .mascot-shake {
-            animation: mascot-shake 0.6s ease-in-out !important;
-        }
-
-        /* Пульсация активной кнопки сундука */
-        @keyframes pulse-btn {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 22px rgba(251, 191, 36, 0.8), 0 0 32px rgba(245, 158, 11, 0.4);
-            }
-        }
-
-        .animate-pulse-btn {
-            animation: pulse-btn 1.5s ease-in-out infinite !important;
-        }
-
-        /* --- СТИЛИ И АНИМАЦИИ ЗВЕЗД В КАРТОЧКАХ ТЕМ --- */
-        .star-empty {
-            color: #E5E7EB !important;
-            text-shadow: 0 0 1px #9CA3AF !important;
-            -webkit-text-stroke: 1px #9CA3AF !important;
-            font-size: 14px;
-            display: inline-block;
-        }
-
-        .star-filled {
-            color: #F59E0B !important;
-            fill: #F59E0B !important;
-            filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.6)) !important;
-            font-size: 14px;
-            font-weight: bold;
-            display: inline-block;
-        }
-
-        @keyframes star-pop {
-            0% {
-                transform: scale(1);
-                filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.6));
-            }
-            50% {
-                transform: scale(1.65);
-                color: #FBBF24 !important;
-                filter: drop-shadow(0 0 10px #F59E0B) drop-shadow(0 0 18px #FBBF24);
-                text-shadow: 0 0 12px #F59E0B, 0 0 20px #FBBF24;
-            }
-            100% {
-                transform: scale(1);
-                filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.6));
-            }
-        }
-
-        .star-animate {
-            animation: star-pop 0.75s ease-in-out 1 normal forwards !important;
-        }
-
         /* Тексты */
         .triumph-title {
             font-family: 'Nunito', sans-serif;
@@ -1564,9 +1464,10 @@
         <div id="screen-topics" class="flex flex-col gap-5 px-4 pb-8">
             <!-- Шапка -->
             <header class="w-full py-3 flex justify-between items-center z-10">
-                <!-- Индикатор глобального уровня игрока (⭐ Уровень 1) -->
-                <div id="player-level-container" class="flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-violet-100 to-purple-100 border border-violet-300/60 shadow-sm shrink-0 whitespace-nowrap">
-                    <span class="text-xs font-black text-indigo-900 flex items-center gap-1 whitespace-nowrap" id="player-level-badge">⭐ Уровень 1</span>
+                <!-- Индикатор уровня (🎯 1 Класс) -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+                    <span class="text-base">🎯</span>
+                    <span class="text-xs font-extrabold text-violet-300">1 Класс</span>
                 </div>
 
                 <!-- Счётчик "Стрик" (🔥) + Баланс монет (💰) + Единственный Аватар питомца (🐱) -->
@@ -1586,12 +1487,6 @@
                         <span class="text-xs font-extrabold text-amber-400 coins-badge">0</span>
                         <span class="text-[11px] font-black text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded-lg border border-amber-300 shadow-sm flex items-center gap-1 hover:bg-amber-300 transition-colors">🛍️</span>
                     </div>
-                    <!-- Кнопка переключения звука (Mute) -->
-                    <button id="btn-toggle-sound-hub" onclick="toggleMuteSound()"
-                        class="w-9 h-9 rounded-full bg-slate-800/60 border border-violet-400/40 flex items-center justify-center text-base shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
-                        title="Включить / Выключить звук">
-                        <span class="sound-mute-icon">🔊</span>
-                    </button>
                     <!-- Крайняя правая интерактивная кнопка аватара/профиля -->
                     <button id="header-pet-avatar" onclick="openCollection('hub')"
                         class="pet-avatar-btn relative w-9 h-9 rounded-full bg-gradient-to-br from-violet-600/40 to-indigo-600/40 border border-violet-400/50 flex items-center justify-center text-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
@@ -1622,7 +1517,7 @@
             <!-- Заголовок под шапкой -->
             <div class="text-center my-1">
                 <h1 class="text-2xl font-black text-[#2e0b65] tracking-tight">Выбери тренировку</h1>
-                <p class="text-xs text-indigo-500/70 font-bold mt-0.5">Программа 1 класса | 2 сессии в день по 25 примеров</p>
+                <p class="text-xs text-indigo-500/70 font-bold mt-0.5">Сессия: 25 примеров | Доступны все темы!</p>
             </div>
 
             <!-- Сетка тем (10 карточек: 2 колонки x 5 рядов) -->
@@ -1634,7 +1529,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Сравнение</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Больше, меньше, равно</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1645,7 +1540,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">До 10</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Сложение и вычитание</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1656,7 +1551,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Состав 10</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Заучиваем пары</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1667,7 +1562,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Задачи</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Простые текстовые</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1678,7 +1573,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Числа до 20</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Без перехода</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1689,7 +1584,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Сантиметры и дм</span>
                     <span class="text-[11px] font-bold text-emerald-600/90 text-center">см и дм</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1700,7 +1595,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Сложение (+)</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Через десяток</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1711,7 +1606,7 @@
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Вычитание (-)</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Через десяток</span>
                     <div class="topic-stars flex items-center justify-center gap-0.5 text-[12px]">
-                        <span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span>
+                        <span class="star-1 text-slate-300/60">★</span><span class="star-2 text-slate-300/60">★</span><span class="star-3 text-slate-300/60">★</span><span class="star-4 text-slate-300/60">★</span><span class="star-5 text-slate-300/60">★</span>
                     </div>
                 </button>
 
@@ -1729,7 +1624,7 @@
                 <!-- Ряд 5 (Ошибки): Карточка 10: Работа над ошибками -->
                 <button id="btn-topic-mistakes" data-topic="topic_mistakes" onclick="startTopic('topic_mistakes')"
                     class="topic-card flex flex-col items-center justify-center p-3 rounded-3xl gap-1 cursor-pointer bg-gradient-to-br from-rose-500/10 via-purple-500/10 to-indigo-500/10 border-2 border-slate-500/40 shadow-sm opacity-60 grayscale cursor-not-allowed">
-                    <span class="text-3xl">🛟</span>
+                    <span class="text-3xl">🎯</span>
                     <span class="text-base font-extrabold text-[#2e0b65] text-center">Работа над ошибками</span>
                     <span class="text-[11px] font-bold text-indigo-600/80 text-center">Повтори сложные примеры</span>
                     <span id="mistakes-count-badge" class="mt-1 px-2.5 py-0.5 bg-slate-500/50 text-slate-300 font-extrabold text-[11px] rounded-full shadow-sm">Ошибок нет</span>
@@ -1777,12 +1672,6 @@
                         <span class="text-base">🪙</span>
                         <span class="text-xs font-extrabold text-amber-300 coins-badge">15</span>
                     </div>
-                    <!-- Кнопка переключения звука (Mute) -->
-                    <button id="btn-toggle-sound-game" onclick="toggleMuteSound()"
-                        class="w-9 h-9 rounded-full bg-slate-800/60 border border-indigo-400/40 flex items-center justify-center text-base shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
-                        title="Включить / Выключить звук">
-                        <span class="sound-mute-icon">🔊</span>
-                    </button>
                     <!-- Аватар питомца (коллекция) -->
                     <button class="pet-avatar-btn text-base" id="btn-open-collection-game"
                         title="Коллекция питомцев">🎒</button>
@@ -2004,7 +1893,7 @@
                 </div>
 
                 <!-- Большая кнопка Проверить (Массивная, сочная, с 3D гранью и тенью) -->
-                <button id="btn-check"
+                <button id="btn-check" onclick="checkAnswer()"
                     class="w-full h-18 py-4.5 bg-gradient-to-b from-[#10B981] to-[#047857] hover:from-[#34D399] hover:to-[#059669] text-white text-2xl font-black rounded-3xl shadow-[0_8px_0_#065F46,0_16px_32px_rgba(16,185,129,0.4)] border-t-2 border-emerald-300/40 active:translate-y-[4px] active:shadow-[0_4px_0_#065F46,0_8px_16px_rgba(16,185,129,0.3)] transition-all duration-75 tracking-wider gap-2 flex items-center justify-center cursor-pointer">
                     <svg class="w-7 h-7 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]" fill="none"
                         stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
@@ -2256,52 +2145,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО РАЗБЛОКИРОВКИ ПЕРСОНАЖА -->
-    <div id="unlock-modal" class="hidden">
-        <div id="unlock-modal-card">
-            <div id="unlock-modal-emoji">🦊</div>
-            <h3 class="text-xl font-black text-[#2e0b65]">Новый питомец!</h3>
-            <p id="unlock-modal-name" class="text-sm font-extrabold text-violet-600">Лисичка</p>
-            <button id="unlock-modal-btn">Ура! 🎉</button>
-        </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО ПОВЫШЕНИЯ УРОВНЯ (LEVEL UP MODAL) -->
-    <div id="level-up-modal" class="hidden fixed inset-0 z-[280] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-        <div class="bg-gradient-to-b from-amber-900 via-purple-950 to-slate-950 border-4 border-amber-400 rounded-3xl p-6 text-center max-w-xs w-full flex flex-col items-center gap-4 shadow-[0_0_50px_rgba(251,191,36,0.4)] animate-pop-in relative">
-            <div class="text-6xl animate-bounce">⭐🎉</div>
-            <h3 class="text-2xl font-black text-amber-300">НОВЫЙ УРОВЕНЬ!</h3>
-            <p class="text-sm font-extrabold text-white">Ты достиг <span id="level-up-num" class="text-amber-400 font-black text-lg">2 Уровня!</span></p>
-            <div class="p-3 bg-amber-500/20 border border-amber-400/40 rounded-2xl w-full text-xs font-bold text-amber-200">
-                Бонус за уровень: <span class="text-amber-300 font-black">+50 🪙</span>
-            </div>
-            <button onclick="closeLevelUpModal()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black rounded-2xl shadow-lg active:scale-95 transition-all cursor-pointer text-sm">
-                Отлично! 🚀
-            </button>
-        </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО ПРИВЕТСТВИЯ / ОНБОРДИНГА (ONBOARDING MODAL) -->
-    <div id="onboarding-modal" class="hidden fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
-        <div class="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 border-4 border-indigo-500/60 rounded-3xl p-6 text-center max-w-sm w-full flex flex-col items-center gap-5 shadow-[0_0_50px_rgba(99,102,241,0.4)] animate-pop-in relative">
-            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-violet-500/30 to-indigo-600/40 border-2 border-indigo-400/50 flex items-center justify-center text-6xl shadow-inner animate-float">
-                🦊
-            </div>
-            <div class="flex flex-col gap-2">
-                <h3 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">
-                    Привет! Я Кибер-Лис! 🦊✨
-                </h3>
-                <p class="text-sm font-bold text-indigo-100 leading-relaxed">
-                    Давай проверим твои знания! Решай примеры, копи монеты и покупай мне крутые шапки! 🎩💎
-                </p>
-            </div>
-            <button id="btn-onboarding-start" onclick="closeOnboardingModal()" class="w-full py-3.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black text-base rounded-2xl shadow-[0_10px_25px_rgba(16,185,129,0.4)] active:scale-95 transition-all cursor-pointer border border-emerald-300/40">
-                ПОГНАЛИ! 🚀
-            </button>
-        </div>
-    </div>
-
-
 
     <script>
         (async function() {
@@ -2407,7 +2250,6 @@
         }
         const SESSION_TOTAL = 25;
         let sessionSolved = 0;
-        let sessionHintsUsed = 0;
         const DAILY_SESSIONS_GOAL = 2;
 
         function getTodayKey() {
@@ -2443,7 +2285,7 @@
                 } else { // >= 2
                     if (titleEl) titleEl.textContent = 'Сундук готов к открытию! ✨';
                     if (statusEl) statusEl.textContent = '2 / 2 (Готово!)';
-                    if (descEl) descEl.textContent = 'План выполнен! Забирай награду!';
+                    if (descEl) descEl.textContent = 'Ты выполнил план на сегодня! Забирай свои сокровища!';
                 }
             }
 
@@ -2455,7 +2297,7 @@
                 } else if (dailySessionsCompleted >= DAILY_SESSIONS_GOAL) {
                     btnClaim.textContent = 'Забрать 🎁';
                     btnClaim.disabled = false;
-                    btnClaim.className = "px-3.5 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs rounded-xl shadow-lg animate-pulse-btn cursor-pointer";
+                    btnClaim.className = "px-3.5 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs rounded-xl shadow-lg animate-pulse cursor-pointer";
                 } else {
                     btnClaim.textContent = 'Забрать 🎁';
                     btnClaim.disabled = true;
@@ -2641,41 +2483,7 @@
             return String(p.correctAnswer || "");
         }
 
-        function loadMistakesList() {
-            try {
-                const userMData = localStorage.getItem('userMistakes');
-                const sokratMData = localStorage.getItem('sokrat_mistakes');
-                const userM = userMData ? JSON.parse(userMData) : null;
-                const sokratM = sokratMData ? JSON.parse(sokratMData) : null;
-
-                let list = [];
-                if (Array.isArray(userM) && userM.length > 0) {
-                    list = userM;
-                } else if (Array.isArray(sokratM) && sokratM.length > 0) {
-                    list = sokratM;
-                } else if (Array.isArray(userM)) {
-                    list = userM;
-                } else if (Array.isArray(sokratM)) {
-                    list = sokratM;
-                }
-                return list;
-            } catch (e) {
-                console.warn('Error loading mistakes list from localStorage:', e);
-                return [];
-            }
-        }
-
-        function saveMistakesStorage() {
-            try {
-                const jsonStr = JSON.stringify(mistakesList);
-                localStorage.setItem('sokrat_mistakes', jsonStr);
-                localStorage.setItem('userMistakes', jsonStr);
-            } catch (e) {
-                console.warn('Error saving mistakes to localStorage:', e);
-            }
-        }
-
-        let mistakesList = loadMistakesList();
+        let mistakesList = JSON.parse(localStorage.getItem('userMistakes') || localStorage.getItem('sokrat_mistakes') || '[]');
 
         /** Универсальная функция логгирования неверного ответа в mistakes */
         function logMistake(questionText, correctAnswer, originalProblem = null) {
@@ -2708,7 +2516,8 @@
 
             if (!existsGlobal) {
                 mistakesList.push(probObj);
-                saveMistakesStorage();
+                localStorage.setItem('sokrat_mistakes', JSON.stringify(mistakesList));
+                localStorage.setItem('userMistakes', JSON.stringify(mistakesList));
             }
 
             // 2. Сохраняем в очередь ошибок текущей темы
@@ -2744,7 +2553,8 @@
                 const mKey = m.questionKey || `${m.question || getProblemKey(m)}___${m.correctAnswer}`;
                 return mKey !== uniqueKey && m.question !== questionText && getProblemKey(m) !== probKey;
             });
-            saveMistakesStorage();
+            localStorage.setItem('sokrat_mistakes', JSON.stringify(mistakesList));
+            localStorage.setItem('userMistakes', JSON.stringify(mistakesList));
 
             // 2. Удаляем из очередей всех тем
             Object.keys(topicsState).forEach(tk => {
@@ -3018,135 +2828,7 @@
             localStorage.setItem(`topic_completed_sessions_${topicId}`, next);
             // --- ИНТЕРВАЛЬНОЕ ПОВТОРЕНИЕ: сохраняем дату последнего прохождения ---
             setTopicLastPlayed(topicId);
-            localStorage.setItem('lastActivityTime', Date.now().toString());
             return next;
-        }
-
-        // =====================================================================
-        // ГЛОБАЛЬНЫЙ УРОВЕНЬ ИГРОКА (PLAYER LEVEL SYSTEM)
-        // =====================================================================
-        function calculateTotalStars() {
-            const allTopics = ['topic_1', 'topic_2', 'topic_3', 'topic_4', 'topic_5', 'topic_6', 'topic_7', 'topic_8', 'topic_9'];
-            let totalStars = 0;
-            allTopics.forEach(tId => {
-                if (typeof getTopicCompletedSessions === 'function') {
-                    const count = getTopicCompletedSessions(tId);
-                    totalStars += Math.min(5, Math.max(0, count));
-                }
-            });
-            return totalStars;
-        }
-
-        function getCurrentLevel(totalStars) {
-            if (totalStars >= 50) return 5;
-            if (totalStars >= 30) return 4;
-            if (totalStars >= 15) return 3;
-            if (totalStars >= 5) return 2;
-            return 1;
-        }
-
-        function updatePlayerLevelUI() {
-            const totalStars = calculateTotalStars();
-            const currentLevel = getCurrentLevel(totalStars);
-
-            const badgeEl = document.getElementById('player-level-badge');
-            if (badgeEl) {
-                badgeEl.textContent = `⭐ Уровень ${currentLevel}`;
-            }
-            return currentLevel;
-        }
-
-        function checkPlayerLevelUp() {
-            try {
-                const savedLevel = parseInt(localStorage.getItem('playerLevel') || '1', 10);
-                const newLevel = updatePlayerLevelUI();
-
-                if (newLevel > savedLevel) {
-                    localStorage.setItem('playerLevel', newLevel.toString());
-                    coins += 50;
-                    sessionCoinsEarned += 50;
-                    localStorage.setItem('coins', coins);
-                    if (typeof updateCoinsAndStreak === 'function') updateCoinsAndStreak();
-                    setTimeout(() => showLevelUpModal(newLevel), 500);
-                }
-            } catch (e) {
-                console.warn('Level Up check error:', e);
-            }
-        }
-
-        function showLevelUpModal(newLevel) {
-            const modal = document.getElementById('level-up-modal');
-            const levelNum = document.getElementById('level-up-num');
-            if (levelNum) levelNum.textContent = `${newLevel} Уровня!`;
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.style.display = 'flex';
-            }
-            if (typeof playSound === 'function') playSound('victory');
-            if (typeof confetti !== 'undefined' && confetti.explode) {
-                confetti.explode();
-            }
-        }
-
-        function closeLevelUpModal() {
-            const modal = document.getElementById('level-up-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-            }
-            if (typeof playSound === 'function') playSound('click');
-        }
-
-        // =====================================================================
-        // СИСТЕМА ЗАТУХАНИЯ ЗВЕЗД (STAR DECAY) ПРИ НЕАКТИВНОСТИ (>48 ЧАСОВ)
-        // =====================================================================
-        const STAR_DECAY_HOURS = 48; // Порог неактивности в часах (легко настраивается)
-
-        function checkStarDecay() {
-            try {
-                const rawLastActivity = localStorage.getItem('lastActivityTime');
-                const now = Date.now();
-
-                // 3. Безопасность данных: при первом входе просто инициализируем время
-                if (!rawLastActivity) {
-                    localStorage.setItem('lastActivityTime', now.toString());
-                    return;
-                }
-
-                const lastActivity = parseInt(rawLastActivity, 10);
-                if (isNaN(lastActivity)) {
-                    localStorage.setItem('lastActivityTime', now.toString());
-                    return;
-                }
-
-                const decayThresholdMs = STAR_DECAY_HOURS * 60 * 60 * 1000;
-                const elapsedMs = now - lastActivity;
-
-                // 2. Если прошло больше 48 часов без активности:
-                if (elapsedMs >= decayThresholdMs) {
-                    const allTopics = ['topic_1', 'topic_2', 'topic_3', 'topic_4', 'topic_5', 'topic_6', 'topic_7', 'topic_8', 'topic_9'];
-                    let hasChanges = false;
-
-                    allTopics.forEach(tId => {
-                        const currentSessions = getTopicCompletedSessions(tId);
-                        if (currentSessions > 0) {
-                            const newCount = Math.max(0, currentSessions - 1);
-                            topicSessionsMap[tId] = newCount;
-                            localStorage.setItem(`topic_completed_sessions_${tId}`, newCount.toString());
-                            hasChanges = true;
-                        }
-                    });
-
-                    if (hasChanges) {
-                        localStorage.setItem('sokrat_topic_sessions', JSON.stringify(topicSessionsMap));
-                    }
-
-                    // Важно: обновляем lastActivityTime текущим временем
-                    localStorage.setItem('lastActivityTime', now.toString());
-                }
-            } catch (e) {
-                console.warn('Star decay check error:', e);
-            }
         }
 
         // =====================================================================
@@ -3205,7 +2887,7 @@
             return daysSince >= REVIEW_THRESHOLD_DAYS;
         }
 
-        function updateCardRank(topicId, newlyEarnedStar = false) {
+        function updateCardRank(topicId) {
             const topicsMap = {
                 'topic_1': 'btn-topic-1', 'comparison': 'btn-topic-1',
                 'topic_2': 'btn-topic-2', 'up_to_10': 'btn-topic-2',
@@ -3303,13 +2985,10 @@
                 for (let i = 1; i <= 5; i++) {
                     const star = document.createElement('span');
                     if (i <= starsCount) {
-                        star.className = 'star-filled';
+                        star.className = 'text-amber-400 fill-amber-400 drop-shadow-[0_1px_3px_rgba(245,158,11,0.6)] font-bold text-[14px]';
                         star.textContent = '★';
-                        if (newlyEarnedStar && i === starsCount) {
-                            star.classList.add('star-animate');
-                        }
                     } else {
-                        star.className = 'star-empty';
+                        star.className = 'text-slate-300/50 text-[14px]';
                         star.textContent = '★';
                     }
                     starsContainer.appendChild(star);
@@ -3410,7 +3089,7 @@
                 }
             });
 
-            // Игровая карточка (поддержка формата эмодзи и любых медиафайлов: .png, .gif, .webm)
+            // Игровая карточка
             if (ch.id === 'robik') {
                 robikZone.style.display = '';
                 charEmojiDisplay.style.display = 'none';
@@ -3418,16 +3097,7 @@
             } else {
                 robikZone.style.display = 'none';
                 charEmojiDisplay.style.display = 'block';
-                const imgSrc = ch.img || ch.image || ch.avatarUrl || ch.avatar;
-                if (imgSrc) {
-                    if (imgSrc.endsWith('.webm') || imgSrc.endsWith('.mp4')) {
-                        charEmojiDisplay.innerHTML = `<video id="mascot-avatar-img" src="${imgSrc}" autoplay loop muted playsinline class="mascot-img max-h-24 max-w-24 object-contain inline-block transition-transform pointer-events-none"></video>`;
-                    } else {
-                        charEmojiDisplay.innerHTML = `<img id="mascot-avatar-img" src="${imgSrc}" alt="${ch.name}" class="mascot-img max-h-24 max-w-24 object-contain inline-block transition-transform pointer-events-none" />`;
-                    }
-                } else {
-                    charEmojiDisplay.textContent = ch.emoji;
-                }
+                charEmojiDisplay.textContent = ch.emoji;
             }
 
             // Надетый аксессуар на игровой карточке
@@ -3931,36 +3601,13 @@
             if (btnBuyShield) {
                 if (streakFreeze >= 2) {
                     btnBuyShield.disabled = true;
-                    btnBuyShield.textContent = 'Куплено (2/2) 🛡️';
+                    btnBuyShield.textContent = 'Максимум (2/2) 🛡️';
                 } else if (coins < 50) {
                     btnBuyShield.disabled = true;
                     btnBuyShield.textContent = 'Мало монет (50 🪙)';
-                } else if (streakFreeze === 1) {
-                    btnBuyShield.disabled = false;
-                    btnBuyShield.textContent = 'Купить еще (1/2) 🪙';
                 } else {
                     btnBuyShield.disabled = false;
                     btnBuyShield.textContent = 'Купить за 50 🪙';
-                }
-            }
-
-            const collectionShieldBadge = document.getElementById('collection-shield-count-badge');
-            if (collectionShieldBadge) collectionShieldBadge.textContent = `${streakFreeze} / 2`;
-
-            const btnBuyShieldColl = document.getElementById('btn-buy-shield-collection');
-            if (btnBuyShieldColl) {
-                if (streakFreeze >= 2) {
-                    btnBuyShieldColl.disabled = true;
-                    btnBuyShieldColl.textContent = 'Куплено (2/2) 🛡️';
-                } else if (coins < 50) {
-                    btnBuyShieldColl.disabled = true;
-                    btnBuyShieldColl.textContent = 'Мало монет (50 🪙)';
-                } else if (streakFreeze === 1) {
-                    btnBuyShieldColl.disabled = false;
-                    btnBuyShieldColl.textContent = 'Купить еще (1/2) 🪙';
-                } else {
-                    btnBuyShieldColl.disabled = false;
-                    btnBuyShieldColl.textContent = 'Купить за 50 🪙';
                 }
             }
 
@@ -4057,47 +3704,29 @@
         }
 
         function openShopModal() {
-            const modal = document.getElementById('shop-modal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.style.display = 'flex';
-            }
-            updateShopModalUI();
             haptic('light');
             if (typeof playSound === 'function') playSound('click');
+            openCollection('hub');
         }
 
         function closeShopModal() {
             const modal = document.getElementById('shop-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-            }
+            if (modal) modal.classList.add('hidden');
             haptic('light');
         }
 
         function buyStreakFreezeShield() {
             const PRICE = 50;
-            if (coins < PRICE) {
-                alert("Не хватает монет!");
-                return;
-            }
-            if (streakFreeze >= 2) {
-                alert("У вас уже максимальное количество щитов (2/2)!");
-                return;
-            }
+            if (streakFreeze >= 2 || coins < PRICE) return;
 
             coins -= PRICE;
             streakFreeze += 1;
 
             localStorage.setItem('coins', coins);
             localStorage.setItem('streakFreeze', streakFreeze);
-            localStorage.setItem('hasShield', 'true');
 
             updateCoinsAndStreak();
-            updateShopModalUI();
             renderCollection();
-
             haptic('success');
             if (typeof playSound === 'function') playSound('correct');
         }
@@ -4391,28 +4020,8 @@
             engine = new EmbeddedMathEngine();
         }
 
-        // --- ЗВУКОВОЙ СИНТЕЗАТОР И MUTE ТАЙМЕР ---
+        // --- ЗВУКОВОЙ СИНТЕЗАТОР (Web Audio API) ---
         let audioCtx = null;
-        let isSoundMuted = localStorage.getItem('isSoundMuted') === 'true';
-
-        function updateMuteButtonUI() {
-            const icons = document.querySelectorAll('.sound-mute-icon');
-            icons.forEach(el => {
-                el.textContent = isSoundMuted ? '🔇' : '🔊';
-            });
-        }
-
-        function toggleMuteSound() {
-            isSoundMuted = !isSoundMuted;
-            localStorage.setItem('isSoundMuted', isSoundMuted ? 'true' : 'false');
-            updateMuteButtonUI();
-            if (!isSoundMuted) {
-                playSound('click');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', updateMuteButtonUI);
-
         function initAudio() {
             try {
                 if (!audioCtx) {
@@ -4436,153 +4045,66 @@
         }
         ['click', 'touchstart', 'keydown'].forEach(evt => window.addEventListener(evt, unlockAudio, { once: true }));
 
-        // --- РЕАКЦИИ И АНИМАЦИИ МАСКОТОВ ---
-        function triggerMascotReaction(type) {
-            try {
-                const targets = [
-                    document.getElementById('char-emoji-display'),
-                    document.getElementById('mascot-avatar-img'),
-                    document.getElementById('robik-zone'),
-                    document.getElementById('robik-svg'),
-                    document.getElementById('triumph-mascot-emoji')
-                ].filter(Boolean);
-
-                const animClass = type === 'bounce' ? 'mascot-bounce' : 'mascot-shake';
-                const duration = type === 'bounce' ? 950 : 600;
-
-                targets.forEach(el => {
-                    el.classList.remove('mascot-bounce', 'mascot-shake');
-                    void el.offsetWidth; // Форсируем reflow для повторного вызова
-                    el.classList.add(animClass);
-
-                    setTimeout(() => {
-                        el.classList.remove(animClass);
-                    }, duration);
-                });
-            } catch (e) {
-                console.warn('Mascot reaction error:', e);
-            }
-        }
-
-        // --- ЗВУКОВОЙ МЕНЕДЖЕР (playSound с Web Audio API и Mute) ---
-        const audioCache = {};
-
-        function playSound(soundName) {
-            if (isSoundMuted || !soundName) return; // Если звук выключен — выходим сразу
-
+        function playSound(type) {
             initAudio();
             if (!audioCtx) return;
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume().catch(() => {});
-            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
 
-            const type = String(soundName).toLowerCase().replace(/\.mp3$/, '');
             const now = audioCtx.currentTime;
 
-            try {
-                if (type === 'correct') {
-                    // Ретро-звук монеты: 2 быстрых высоких тона (987Hz -> через 0.08s -> 1318Hz, тип sine/square)
-                    const coinTones = [
-                        { freq: 987, delay: 0, duration: 0.1 },
-                        { freq: 1318, delay: 0.08, duration: 0.22 }
-                    ];
+            if (type === 'click') {
+                // Мягкий короткий «тик»
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+                gain.gain.setValueAtTime(0.07, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                osc.start(now); osc.stop(now + 0.06);
 
-                    coinTones.forEach(t => {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
+            } else if (type === 'correct') {
+                // Весёлый двухтональный звон монетки (C5 → E5)
+                [[523.25, 0], [659.25, 0.12], [783.99, 0.22]].forEach(([freq, delay]) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, now + delay);
+                    g.gain.setValueAtTime(0.0, now + delay);
+                    g.gain.linearRampToValueAtTime(0.12, now + delay + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.18);
+                    o.start(now + delay);
+                    o.stop(now + delay + 0.2);
+                });
 
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(t.freq, now + t.delay);
+            } else if (type === 'incorrect') {
+                // Низкий мягкий нисходящий тон
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                osc.start(now); osc.stop(now + 0.35);
 
-                        gain.gain.setValueAtTime(0, now + t.delay);
-                        gain.gain.linearRampToValueAtTime(0.15, now + t.delay + 0.01);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + t.delay + t.duration);
-
-                        osc.start(now + t.delay);
-                        osc.stop(now + t.delay + t.duration);
-                    });
-
-                } else if (type === 'error' || type === 'incorrect') {
-                    // Короткий, глухой низкий звук: 300Hz спадает до 150Hz (тип triangle)
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
-
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-
-                    osc.start(now);
-                    osc.stop(now + 0.25);
-
-                } else if (type === 'victory' || type === 'triumph' || type === 'goal') {
-                    // Короткая радостная фанфара из 4 быстро идущих нот по нарастающей (523, 659, 784, 1046 Hz)
-                    const fanfare = [
-                        { freq: 523.25, delay: 0 },
-                        { freq: 659.25, delay: 0.09 },
-                        { freq: 783.99, delay: 0.18 },
-                        { freq: 1046.50, delay: 0.27 }
-                    ];
-
-                    fanfare.forEach(n => {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(n.freq, now + n.delay);
-
-                        gain.gain.setValueAtTime(0, now + n.delay);
-                        gain.gain.linearRampToValueAtTime(0.18, now + n.delay + 0.01);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.delay + 0.28);
-
-                        osc.start(now + n.delay);
-                        osc.stop(now + n.delay + 0.3);
-                    });
-
-                } else if (type === 'click') {
-                    // Мягкий короткий клик
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
-
-                    gain.gain.setValueAtTime(0.08, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-                    osc.start(now);
-                    osc.stop(now + 0.05);
-
-                } else {
-                    // Запасное воспроизведение внешнего mp3 файла (если есть)
-                    let fileName = soundName;
-                    if (!fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) fileName += '.mp3';
-
-                    let audio = audioCache[fileName];
-                    if (!audio) {
-                        audio = new Audio(fileName);
-                        audioCache[fileName] = audio;
-                    } else {
-                        audio.currentTime = 0;
-                    }
-                    const promise = audio.play();
-                    if (promise !== undefined) {
-                        promise.catch(() => {});
-                    }
-                }
-            } catch (e) {
-                console.warn('Audio playback error:', e);
+            } else if (type === 'goal' || type === 'triumph') {
+                // Торжественный триумфальный фанфар и перезвон (C5-E5-G5-C6-E6)
+                [[523.25, 0], [659.25, 0.08], [783.99, 0.16], [1046.5, 0.28], [1318.5, 0.4]].forEach(([freq, delay]) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, now + delay);
+                    g.gain.setValueAtTime(0.0, now + delay);
+                    g.gain.linearRampToValueAtTime(0.18, now + delay + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.35);
+                    o.start(now + delay);
+                    o.stop(now + delay + 0.4);
+                });
             }
         }
 
@@ -4694,8 +4216,7 @@
             if (typeof explodeFountainParticles === 'function') {
                 explodeFountainParticles(questionContainer);
             }
-            triggerMascotReaction('bounce');
-            playSound('correct.mp3');
+            playSound('correct');
 
             setTimeout(() => {
                 if (aura) aura.classList.remove('neon-success-glow');
@@ -4978,20 +4499,6 @@
             }
             document.body.classList.remove('hint-open');
             resetBatteries();
-
-            if (sessionSolved === 0) {
-                sessionHintsUsed = 0;
-            }
-
-            if (btnHint) {
-                if (sessionHintsUsed >= 3) {
-                    btnHint.disabled = true;
-                    btnHint.classList.add('opacity-50', 'pointer-events-none');
-                } else {
-                    btnHint.disabled = false;
-                    btnHint.classList.remove('opacity-50', 'pointer-events-none');
-                }
-            }
 
             isInputLocked = false;
             updateCheckButtonState();
@@ -5726,18 +5233,7 @@
         if (btnHint) {
             btnHint.addEventListener('click', (e) => {
                 if (e) e.preventDefault();
-                if (sessionHintsUsed < 3) {
-                    sessionHintsUsed++;
-                    showHint();
-                    if (sessionHintsUsed >= 3) {
-                        btnHint.disabled = true;
-                        btnHint.classList.add('opacity-50', 'pointer-events-none');
-                    }
-                } else {
-                    setSpeechBubble('Подсказки на эту тренировку закончились! Дальше сам! 🦊💙');
-                    btnHint.disabled = true;
-                    btnHint.classList.add('opacity-50', 'pointer-events-none');
-                }
+                showHint();
             });
         }
 
@@ -5783,13 +5279,13 @@
                     // --- АДАПТИВНОСТЬ: ПОВЫШЕНИЕ УРОВНЯ ПРИ 3 ПРАВИЛЬНЫХ ОТВЕТАХ ПОДРЯД (STEP UP) ---
                     problemConsecutiveErrors = 0;
                     topicStreak += 1;
-                    if (topicStreak >= 2) {
+                    if (topicStreak >= 3) {
                         const currentLvl = getTopicDifficulty(currentRuleType);
                         if (currentLvl < 3) {
                             const newLvl = setTopicDifficulty(currentRuleType, currentLvl + 1);
                             setTimeout(() => {
                                 setRobikState('success');
-                                setSpeechBubble(`Супер! 2 верных ответа подряд! Уровень повышен до ${newLvl}! 💪⭐`);
+                                setSpeechBubble(`Супер! 3 верных ответа подряд! Уровень повышен до ${newLvl}! 💪⭐`);
                             }, 500);
                         }
                         topicStreak = 0;
@@ -5838,12 +5334,11 @@
                             }
 
                             if (sessionSolved >= SESSION_TOTAL) {
-                                localStorage.setItem('lastActivityTime', Date.now().toString());
                                 if (typeof incrementTopicCompletedSessions === 'function') {
                                     incrementTopicCompletedSessions(currentRuleType);
                                 }
                                 if (typeof updateCardRank === 'function') {
-                                    updateCardRank(currentRuleType, true);
+                                    updateCardRank(currentRuleType);
                                 }
                                 coins += 5;
                                 sessionCoinsEarned += 5;
@@ -5852,10 +5347,6 @@
                                 dailySessionsCompleted += 1;
                                 localStorage.setItem(getTodayKey(), dailySessionsCompleted);
                                 updateDailyGoalUI();
-
-                                if (typeof checkPlayerLevelUp === 'function') {
-                                    checkPlayerLevelUp();
-                                }
 
                                 if (dailySessionsCompleted >= DAILY_SESSIONS_GOAL) {
                                     checkAndUpdateStreakOnDailyGoal();
@@ -5905,25 +5396,18 @@
                     saveMistake(currentProblem);
                     topicStreak = 0; // Сброс серии правильных ответов
                     sessionErrors += 1; // Увеличиваем счетчик ошибок за сессию
-                    problemConsecutiveErrors += 1;
 
-                    // Упрощение при ошибке (STEP DOWN): снижение уровня на 1 при 2 ошибках подряд
-                    if (problemConsecutiveErrors >= 2) {
-                        const currentLvl = getTopicDifficulty(currentRuleType);
-                        if (currentLvl > 1) {
-                            const newLvl = setTopicDifficulty(currentRuleType, currentLvl - 1);
-                            setSpeechBubble(`Ничего страшного! Давай попробуем пример на Уровне ${newLvl}! 💙`);
-                        } else {
-                            setSpeechBubble(getRandomPhrase(SAD_PHRASES));
-                        }
-                        problemConsecutiveErrors = 0; // Сбрасываем счетчик после понижения
+                    // Упрощение при ошибке (STEP DOWN): снижение уровня на 1 (не ниже Ур. 1)
+                    const currentLvl = getTopicDifficulty(currentRuleType);
+                    if (currentLvl > 1) {
+                        const newLvl = setTopicDifficulty(currentRuleType, currentLvl - 1);
+                        setSpeechBubble(`Ничего страшного! Давай попробуем пример на Уровне ${newLvl}! 💙`);
                     } else {
                         setSpeechBubble(getRandomPhrase(SAD_PHRASES));
                     }
                     saveAppState();
 
-                    playSound('error.mp3');
-                    triggerMascotReaction('shake');
+                    playSound('incorrect');
                     haptic('error');
                     setRobikState('error');
                     setCharEmojiState('error');
@@ -6064,8 +5548,7 @@
 
             // Звук и конфетти
             try {
-                playSound('victory.mp3');
-                triggerMascotReaction('bounce');
+                playSound('triumph');
                 if (typeof confetti !== 'undefined' && confetti.explode) {
                     confetti.explode();
                 }
@@ -6083,7 +5566,6 @@
                     return;
                 }
                 sessionSolved = 0;
-                sessionHintsUsed = 0;
                 topicStreak = 0;
                 problemConsecutiveErrors = 0;
                 sessionErrors = 0;
@@ -6119,7 +5601,7 @@
                     'subtraction': '➖ ВЫЧИТАНИЕ (-)',
                     'topic_9': '💯 ДЕСЯТКИ',
                     'tens': '💯 ДЕСЯТКИ',
-                    'topic_mistakes': '🛟 РАБОТА НАД ОШИБКАМИ'
+                    'topic_mistakes': '🎯 РАБОТА НАД ОШИБКАМИ'
                 };
 
                 const aliasMap = {
@@ -6297,9 +5779,7 @@
                 const tData = getTopicData(currentRuleType);
                 sessionSolved = tData.sessionSolved || 0;
 
-                checkStarDecay();
                 renderTopics();
-                updatePlayerLevelUI();
                 verifyStreakOnLoad();
                 updateDailyGoalUI();
                 updateMistakesBadge();
@@ -6313,28 +5793,7 @@
                 }
             }
 
-            function checkOnboarding() {
-                const hasSeen = localStorage.getItem('hasSeenOnboarding');
-                const modal = document.getElementById('onboarding-modal');
-                if (!hasSeen && modal) {
-                    modal.classList.remove('hidden');
-                    modal.style.display = 'flex';
-                }
-            }
-
-            function closeOnboardingModal() {
-                const modal = document.getElementById('onboarding-modal');
-                if (modal) {
-                    modal.classList.add('hidden');
-                    modal.style.display = 'none';
-                }
-                localStorage.setItem('hasSeenOnboarding', 'true');
-                if (typeof haptic === 'function') haptic('success');
-                if (typeof playSound === 'function') playSound('click');
-            }
-
             loadSavedSession();
-            checkOnboarding();
 
             // Инициализация Telegram Web App
             if (window.Telegram && window.Telegram.WebApp) {
@@ -6344,12 +5803,6 @@
 
             console.log('Sokrat App Initialized Successfully');
 
-            window.calculateTotalStars = calculateTotalStars;
-            window.getCurrentLevel = getCurrentLevel;
-            window.updatePlayerLevelUI = updatePlayerLevelUI;
-            window.checkPlayerLevelUp = checkPlayerLevelUp;
-            window.showLevelUpModal = showLevelUpModal;
-            window.closeLevelUpModal = closeLevelUpModal;
             window.startTopic = startTopic;
             window.showScreen = showScreen;
             window.loadProblem = loadProblem;
@@ -6364,8 +5817,6 @@
             window.buyStreakFreezeShield = buyStreakFreezeShield;
             window.closeShieldSavedModal = closeShieldSavedModal;
             window.showShieldSavedModal = showShieldSavedModal;
-            window.closeOnboardingModal = closeOnboardingModal;
-            window.checkOnboarding = checkOnboarding;
             if (typeof selectTopic === 'function') window.selectTopic = selectTopic;
             if (typeof checkAnswer === 'function') window.checkAnswer = checkAnswer;
             if (typeof showHint === 'function') window.showHint = showHint;
