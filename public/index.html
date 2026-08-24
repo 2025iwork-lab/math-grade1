@@ -5283,18 +5283,68 @@
 
                 label1.textContent = 'Левая часть';
                 label2.textContent = 'Правая часть';
-                battery1Text.textContent = `${a}`;
-                battery2Text.textContent = `${b}`;
+
+                const qStr = String(currentProblem.question || '');
+                let rawLeft = '', rawRight = '';
+
+                if (qStr.includes('...')) {
+                    const compParts = qStr.split('...');
+                    rawLeft = compParts[0] || '';
+                    rawRight = compParts[1] || '';
+                } else if (qStr.includes('?')) {
+                    const compParts = qStr.split('?');
+                    rawLeft = compParts[0] || '';
+                    rawRight = compParts[1] || '';
+                } else if (qStr.includes('?')) {
+                    const compParts = qStr.split('?');
+                    rawLeft = compParts[0] || '';
+                    rawRight = compParts[1] || '';
+                } else if (currentProblem.a !== undefined && currentProblem.b !== undefined) {
+                    rawLeft = String(currentProblem.a);
+                    rawRight = String(currentProblem.b);
+                } else {
+                    rawLeft = qStr;
+                    rawRight = '0';
+                }
+
+                function evalSide(str) {
+                    if (typeof str === 'number') return isNaN(str) ? 0 : str;
+                    if (!str) return 0;
+                    const cleanStr = String(str).trim();
+                    if (!isNaN(Number(cleanStr))) return Number(cleanStr);
+                    const tokens = cleanStr.match(/(\d+|[+-])/g);
+                    if (!tokens) return 0;
+                    let res = 0;
+                    let currentOp = '+';
+                    for (let token of tokens) {
+                        if (token === '+' || token === '-') {
+                            currentOp = token;
+                        } else {
+                            const num = parseInt(token, 10);
+                            if (!isNaN(num)) {
+                                if (currentOp === '+') res += num;
+                                else if (currentOp === '-') res -= num;
+                            }
+                        }
+                    }
+                    return res;
+                }
+
+                const valA = evalSide(rawLeft);
+                const valB = evalSide(rawRight);
+
+                battery1Text.textContent = `${valA}`;
+                battery2Text.textContent = `${valB}`;
 
                 const cmpSign = String(answer);
                 batteryHintFormula.innerHTML = `
                     <div class="text-center font-sans font-extrabold text-base sm:text-lg">
-                        Сравниваем <span class="text-sky-400">${a}</span> и <span class="text-emerald-400">${b}</span> &bull; Нужен знак <span class="text-amber-300 font-black">${cmpSign}</span>
+                        Сравниваем <span class="text-sky-400">${valA}</span> и <span class="text-emerald-400">${valB}</span> &bull; Нужен знак <span class="text-amber-300 font-black">${cmpSign}</span>
                     </div>
                 `;
 
-                const fillA = Math.min(Math.max(0, a), 10);
-                const fillB = Math.min(Math.max(0, b), 10);
+                const fillA = Math.min(Math.max(0, valA), 10);
+                const fillB = Math.min(Math.max(0, valB), 10);
 
                 for (let i = 0; i < fillA; i++) {
                     setTimeout(() => {
