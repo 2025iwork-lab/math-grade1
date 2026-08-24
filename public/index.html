@@ -5433,13 +5433,13 @@
                 battery2Card.className = "relative w-12 h-28 border-2 border-amber-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
                 battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-amber-500/50 rounded-t-sm";
 
-                label1.textContent = '1 десяток';
-                label2.textContent = `${unitVal} единиц`;
-
-                battery1Text.textContent = `10`;
-                battery2Text.textContent = `${unitVal}`;
-
                 if (operator === '+') {
+                    label1.textContent = '1 десяток';
+                    label2.textContent = `${unitVal} единиц`;
+
+                    battery1Text.textContent = `10`;
+                    battery2Text.textContent = `${unitVal}`;
+
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
                             <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Объяснение: 1 десяток (10) и ${unitVal} единиц (${unitVal}) вместе образуют число ${total}.</div>
@@ -5447,6 +5447,12 @@
                         </div>
                     `;
                 } else {
+                    label1.textContent = 'Уменьшаемое';
+                    label2.textContent = 'Вычитаемое';
+
+                    battery1Text.textContent = `${a}`;
+                    battery2Text.textContent = `${b}`;
+
                     const subTotal = a;
                     const subUnit = a % 10;
                     if (b === subUnit) {
@@ -5645,20 +5651,20 @@
             if (batteriesVisual) batteriesVisual.classList.remove('hidden');
 
             if (operator === '-') {
-                battery1Card.className = "relative w-12 h-28 border-2 border-sky-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
-                battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-sky-500/50 rounded-t-sm";
-                battery2Card.className = "relative w-12 h-28 border-2 border-rose-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
-                battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-rose-500/50 rounded-t-sm";
+                battery1Card.className = "relative w-12 h-28 border-2 border-emerald-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
+                battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-emerald-500/50 rounded-t-sm";
+                battery2Card.className = "relative w-12 h-28 border-2 border-amber-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
+                battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-amber-500/50 rounded-t-sm";
 
-                label1.textContent = 'Было';
-                label2.textContent = 'Отняли';
+                label1.textContent = 'Уменьшаемое';
+                label2.textContent = 'Вычитаемое';
 
                 battery1Text.textContent = `${a}`;
-                battery2Text.textContent = `-${b}`;
+                battery2Text.textContent = `${b}`;
 
                 batteryHintFormula.innerHTML = `
                     <div class="text-center font-sans font-extrabold text-base sm:text-lg">
-                        Было <span class="text-sky-400">${a}</span>. Отняли <span class="text-rose-400">${b}</span>. Осталось <span class="text-emerald-400">${answer}</span>.
+                        Было <span class="text-emerald-400">${a}</span>. Отняли <span class="text-amber-400">${b}</span>. Осталось <span class="text-sky-400">${answer}</span>.
                     </div>
                 `;
 
