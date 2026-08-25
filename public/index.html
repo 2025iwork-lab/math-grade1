@@ -6211,6 +6211,28 @@
             } catch (e) {
                 console.warn('Triumph media error:', e);
             }
+
+            // Отправка отчёта в Telegram WebApp
+            try {
+                if (window.Telegram?.WebApp) {
+                    const totalQuestionsCount = typeof SESSION_TOTAL !== 'undefined' ? SESSION_TOTAL : 25;
+                    const errorsCount = typeof sessionErrors !== 'undefined' ? sessionErrors : 0;
+                    const correctAnswersCount = Math.max(0, totalQuestionsCount - errorsCount);
+                    const earnedStarsCount = typeof sessionCoinsEarned !== 'undefined' ? sessionCoinsEarned : 0;
+
+                    const report = {
+                        type: 'session_complete',
+                        correct: correctAnswersCount || 0,
+                        total: totalQuestionsCount || 0,
+                        errors: errorsCount || 0,
+                        stars: earnedStarsCount || 0,
+                        timestamp: Date.now()
+                    };
+                    window.Telegram.WebApp.sendData(JSON.stringify(report));
+                }
+            } catch (e) {
+                console.warn('Telegram WebApp sendData error:', e);
+            }
         }
 
             // --- ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ ИГРЫ И КЛИКОВ ПО ТЕМАМ ---

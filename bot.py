@@ -1,5 +1,7 @@
 import os
 import json
+import time
+import datetime
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import telebot
@@ -8,6 +10,7 @@ from telebot import types
 TOKEN = '8647743816:AAHxk9I_dnFOf6K3KHyrv7CBF4sEQ8SFftI'
 WEBAPP_URL = 'https://2025iwork-lab.github.io/math-grade1/public/'
 PARENT_LINKS_FILE = 'parent_links.json'
+DAILY_STATS_FILE = 'daily_stats.json'
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -27,6 +30,22 @@ def save_parent_links(links):
     except Exception as e:
         print(f"Error saving {PARENT_LINKS_FILE}: {e}")
 
+def load_daily_stats():
+    if os.path.exists(DAILY_STATS_FILE):
+        try:
+            with open(DAILY_STATS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading {DAILY_STATS_FILE}: {e}")
+    return {}
+
+def save_daily_stats(stats):
+    try:
+        with open(DAILY_STATS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(stats, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving {DAILY_STATS_FILE}: {e}")
+
 def get_main_reply_keyboard():
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn_app = types.KeyboardButton("🚀 Открыть тренажёр", web_app=types.WebAppInfo(url=WEBAPP_URL))
@@ -44,6 +63,58 @@ def setup_bot_commands():
     except Exception as e:
         print(f"Error setting bot commands: {e}")
 
+def send_daily_digests(date_str):
+    stats = load_daily_stats()
+    if date_str not in stats:
+        return
+
+    day_data = stats[date_str]
+    for child_id_str, c_stats in day_data.items():
+        parent_id = c_stats.get('parent_id')
+        if not parent_id:
+            continue
+
+        child_name = c_stats.get('child_name', 'Ребёнок')
+        sessions_count = c_stats.get('sessions_count', 0)
+        total_solved = c_stats.get('total_solved', 0)
+        correct_solved = c_stats.get('correct_solved', 0)
+        total_stars = c_stats.get('total_stars', 0)
+
+        if total_solved > 0:
+            accuracy = round((correct_solved / total_solved) * 100)
+        else:
+            accuracy = 0
+
+        msg_text = (
+            f"🌙 Итоги дня по математике ({child_name}):\n\n"
+            f"🎯 Количество тренировок: {sessions_count}\n"
+            f"🧮 Всего решено примеров: {total_solved}\n"
+            f"⭐ Без ошибок: {correct_solved} из {total_solved} ({accuracy}%)\n"
+            f"💰 Заработано звёзд: +{total_stars}\n\n"
+            f"Отличный результат за сегодня! 🚀"
+        )
+
+        try:
+            bot.send_message(parent_id, msg_text)
+        except Exception as e:
+            print(f"Failed to send digest to parent {parent_id}: {e}")
+
+def daily_digest_scheduler():
+    last_sent_date = None
+    while True:
+        try:
+            msk_tz = datetime.timezone(datetime.timedelta(hours=3))
+            now = datetime.datetime.now(msk_tz)
+            if now.hour == 20 and now.minute == 0:
+                today_str = now.strftime('%Y-%m-%d')
+                if last_sent_date != today_str:
+                    send_daily_digests(today_str)
+                    last_sent_date = today_str
+            time.sleep(30)
+        except Exception as e:
+            print(f"Error in daily_digest_scheduler: {e}")
+            time.sleep(30)
+
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -58,6 +129,50 @@ def run_server():
     port = int(os.environ.get('PORT', 10000))
     server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
     server.serve_forever()
+
+@bot.message_handler(content_types=['web_app_data'])
+def handle_web_app_data(message):
+    try:
+        raw_data = message.web_app_data.data
+        data = json.loads(raw_data)
+        if data.get('type') == 'session_complete':
+            child_id = message.from_user.id
+            child_name = message.from_user.first_name or "Ребёнок"
+
+            links = load_parent_links()
+            parent_id = links.get(str(child_id))
+
+            msk_tz = datetime.timezone(datetime.timedelta(hours=3))
+            today_str = datetime.datetime.now(msk_tz).strftime('%Y-%m-%d')
+
+            stats = load_daily_stats()
+            if today_str not in stats:
+                stats[today_str] = {}
+
+            child_key = str(child_id)
+            if child_key not in stats[today_str]:
+                stats[today_str][child_key] = {
+                    'parent_id': parent_id,
+                    'child_name': child_name,
+                    'sessions_count': 0,
+                    'total_solved': 0,
+                    'correct_solved': 0,
+                    'errors': 0,
+                    'total_stars': 0
+                }
+
+            c_stats = stats[today_str][child_key]
+            c_stats['parent_id'] = parent_id or c_stats.get('parent_id')
+            c_stats['child_name'] = child_name
+            c_stats['sessions_count'] += 1
+            c_stats['total_solved'] += int(data.get('total', 0))
+            c_stats['correct_solved'] += int(data.get('correct', 0))
+            c_stats['errors'] += int(data.get('errors', 0))
+            c_stats['total_stars'] += int(data.get('stars', 0))
+
+            save_daily_stats(stats)
+    except Exception as e:
+        print(f"Error handling web_app_data: {e}")
 
 @bot.message_handler(commands=['link', 'parent'])
 @bot.message_handler(func=lambda msg: msg.text and 'Ссылка для ребёнка' in msg.text)
@@ -108,4 +223,5 @@ def start(message):
 if __name__ == '__main__':
     setup_bot_commands()
     threading.Thread(target=run_server, daemon=True).start()
+    threading.Thread(target=daily_digest_scheduler, daemon=True).start()
     bot.infinity_polling(skip_pending=True)
