@@ -116,85 +116,68 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Адаптивность при открытой подсказке и на маленьких экранах */
-        .hint-open #robik-svg {
-            width: 7rem !important;
-            /* w-28 */
-            height: 7rem !important;
-            /* h-28 */
+        /* Кросс-платформенная мобильная адаптация для iOS и Android (No-Scroll экран) */
+        html:has(#screen-game.active),
+        body:has(#screen-game.active) {
+            overflow: hidden !important;
+            height: 100dvh !important;
+            min-height: -webkit-fill-available !important;
+            max-height: 100dvh !important;
         }
 
-        .hint-open #game-card {
-            padding: 1rem !important;
-            /* p-4 */
-            gap: 0.75rem !important;
-            /* gap-3 */
+        .app-container:has(#screen-game.active) {
+            height: 100dvh !important;
+            min-height: -webkit-fill-available !important;
+            max-height: 100dvh !important;
+            overflow: hidden !important;
+            padding-bottom: 0 !important;
+            justify-content: space-between !important;
         }
 
-        .hint-open #batteries-container {
-            padding: 0.75rem !important;
-            gap: 0.5rem !important;
+        #screen-game.active {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            height: 100dvh !important;
+            min-height: -webkit-fill-available !important;
+            max-height: 100dvh !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            padding-top: max(8px, env(safe-area-inset-top)) !important;
+            padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
         }
 
-        @media (max-height: 740px) {
-
-            .numpad-btn,
-            #btn-delete,
-            #btn-hint {
-                height: 3.5rem !important;
-                /* h-14 */
-                font-size: 1.5rem !important;
-            }
-
-            #btn-check {
-                height: 4rem !important;
-                font-size: 1.25rem !important;
-                padding-top: 0.75rem !important;
-                padding-bottom: 0.75rem !important;
-            }
-
-            #robik-svg {
-                width: 8rem !important;
-                height: 8rem !important;
-            }
-
-            #game-card {
-                padding: 1.25rem !important;
-                gap: 1rem !important;
-            }
+        #screen-game header {
+            display: flex !important;
+            gap: 4px !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            flex-shrink: 0 !important;
+            padding: 6px 8px !important;
         }
 
-        @media (max-height: 660px) {
+        #screen-game header > div {
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            flex-shrink: 1 !important;
+            min-width: 0 !important;
+        }
 
-            .numpad-btn,
-            #btn-delete,
-            #btn-hint {
-                height: 3rem !important;
-                /* h-12 */
-                font-size: 1.25rem !important;
-            }
+        #screen-game header #btn-back-to-hub {
+            flex-shrink: 0 !important;
+            min-width: 80px !important;
+            padding: 6px 10px !important;
+        }
 
-            #btn-check {
-                height: 3.25rem !important;
-                font-size: 1.1rem !important;
-                padding-top: 0.5rem !important;
-                padding-bottom: 0.5rem !important;
-            }
-
-            #robik-svg {
-                width: 6rem !important;
-                height: 6rem !important;
-            }
-
-            #game-card {
-                padding: 0.75rem !important;
-                gap: 0.75rem !important;
-            }
-
-            main {
-                padding: 0.5rem !important;
-                gap: 0.75rem !important;
-            }
+        #screen-game header .coins-badge,
+        #screen-game header .streak-badge {
+            font-size: 0.75rem !important;
         }
 
         /* ==========================================================================
@@ -393,17 +376,8 @@
             width: 100%;
             margin: 0 auto;
             box-sizing: border-box;
-            gap: 12px;
-            padding: 12px 16px 20px 16px;
-            min-height: auto;
-            height: auto;
-        }
-
-        #screen-game.active {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: flex-start !important;
-            align-items: center !important;
+            gap: 6px;
+            padding: 8px;
         }
 
         /* Все скрытые модалки и оверлеи УБИВАЮТСЯ по умолчанию */
@@ -422,40 +396,64 @@
 
         /* 4. Белая скругленная центральная карточка */
         #game-card {
+            width: 100% !important;
             background: #ffffff !important;
             border: 2px solid #ede9fe !important;
-            border-radius: 24px !important;
-            box-shadow: 0 10px 30px rgba(92, 22, 197, 0.08) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 8px 20px rgba(92, 22, 197, 0.08) !important;
             color: #1e1b4b !important;
             margin: 0 !important;
-            padding: 8px 12px !important;
-            height: auto !important;
+            padding: 6px 10px !important;
+            gap: 4px !important;
+            flex-shrink: 1 !important;
+            min-height: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        #hologram-aura {
+            padding: 2px !important;
+            flex-shrink: 1 !important;
+            min-height: 0 !important;
+        }
+
+        #robik-zone {
+            flex-shrink: 1 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
         }
 
         #robik-svg {
-            width: 92px !important;
-            height: 92px !important;
+            max-height: 60px !important;
+            height: auto !important;
+            width: auto !important;
+            max-width: 60px !important;
+            flex-shrink: 1 !important;
         }
 
-        #btn-check {
-            margin-top: 10px !important;
+        #char-emoji-display {
+            max-height: 60px !important;
+            font-size: 2.5rem !important;
+            line-height: 1 !important;
+            margin: 2px 0 !important;
+            flex-shrink: 1 !important;
         }
 
         #game-char-name {
             color: #1e1b4b !important;
-            font-size: 18px !important;
+            font-size: 15px !important;
             font-weight: 800 !important;
             text-shadow: none !important;
-            line-height: 1.2 !important;
+            line-height: 1.1 !important;
         }
 
         #game-char-status {
             color: #6366f1 !important;
-            font-size: 12px !important;
+            font-size: 11px !important;
             font-weight: 600 !important;
             text-shadow: none !important;
             filter: none !important;
-            line-height: 1.2 !important;
+            line-height: 1.1 !important;
         }
 
         @keyframes explosiveRobikZoom {
@@ -591,23 +589,36 @@
             background-color: #fbfbfe !important;
             border: 2px solid #ede9fe !important;
             box-shadow: none !important;
+            padding: 6px 8px !important;
+            gap: 4px !important;
+            border-radius: 14px !important;
         }
 
         #hint-title {
             color: #7c3aed !important;
+            font-size: 10px !important;
+            margin-bottom: 1px !important;
         }
 
         #battery-1-text {
             color: #0284c7 !important;
+            font-size: 11px !important;
+            line-height: 1 !important;
+            margin-top: 1px !important;
         }
 
         #battery-2-text {
             color: #059669 !important;
+            font-size: 11px !important;
+            line-height: 1 !important;
+            margin-top: 1px !important;
         }
 
         #battery-1-label,
         #battery-2-label {
             color: #64748b !important;
+            font-size: 9px !important;
+            line-height: 1 !important;
         }
 
         #battery-1-card,
@@ -615,6 +626,19 @@
             background-color: #ede9fe !important;
             border-color: #ddd6fe !important;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+            height: 48px !important;
+            max-height: 60px !important;
+            width: 36px !important;
+            padding: 2px !important;
+            box-sizing: border-box !important;
+        }
+
+        .battery-segment,
+        .battery-segment-2 {
+            height: 3px !important;
+            min-height: 2px !important;
+            border-radius: 1px !important;
+            margin: 1px 0 !important;
         }
 
         /* Пустые сегменты */
@@ -629,6 +653,10 @@
             color: #334155 !important;
             border: 1px solid #ede9fe !important;
             box-shadow: none !important;
+            font-size: 12px !important;
+            line-height: 1.2 !important;
+            padding: 4px 6px !important;
+            margin-top: 2px !important;
         }
 
         #battery-hint-formula .text-sky-400,
@@ -656,11 +684,26 @@
             color: #4f46e5 !important;
         }
 
-        footer {
-            flex: none !important;
-            padding-bottom: 10px !important;
-            margin-bottom: 10px !important;
+        /* При открытой подсказке скрываем аватару (робота), чтобы весь интерфейс гарантированно помещался без вертикального скролла */
+        .hint-open #hologram-aura {
+            display: none !important;
+        }
+
+        /* 6. Клавиатура и кнопка ПРОВЕРИТЬ */
+        #keyboard {
             width: 100% !important;
+            max-width: 480px !important;
+            margin: 0 auto !important;
+            padding: 0 4px 4px 4px !important;
+            gap: 6px !important;
+            flex-shrink: 0 !important;
+            z-index: 10 !important;
+            box-sizing: border-box !important;
+        }
+
+        .numpad-grid-container,
+        #comparison-keyboard {
+            gap: 6px !important;
         }
 
         /* Цифровые кнопки: сочный фиолетовый */
@@ -668,10 +711,13 @@
             background: linear-gradient(to bottom, #8b5cf6, #7c3aed) !important;
             color: #ffffff !important;
             border: none !important;
-            border-radius: 16px !important;
-            box-shadow: 0 5px 0 #5b21b6, 0 8px 16px rgba(124, 58, 237, 0.15) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 0 #5b21b6, 0 6px 12px rgba(124, 58, 237, 0.15) !important;
             font-weight: 900 !important;
             transition: all 0.05s ease !important;
+            height: 46px !important;
+            max-height: 52px !important;
+            font-size: 1.4rem !important;
         }
 
         .numpad-btn:active {
@@ -684,10 +730,13 @@
             background: linear-gradient(to bottom, #fb7185, #f43f5e) !important;
             color: #ffffff !important;
             border: none !important;
-            border-radius: 16px !important;
-            box-shadow: 0 5px 0 #be123c, 0 8px 16px rgba(244, 63, 94, 0.15) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 0 #be123c, 0 6px 12px rgba(244, 63, 94, 0.15) !important;
             font-weight: 900 !important;
             transition: all 0.05s ease !important;
+            height: 46px !important;
+            max-height: 52px !important;
+            font-size: 1.4rem !important;
         }
 
         #btn-delete:active {
@@ -700,10 +749,13 @@
             background: linear-gradient(to bottom, #facc15, #eab308) !important;
             color: #ffffff !important;
             border: none !important;
-            border-radius: 16px !important;
-            box-shadow: 0 5px 0 #a16207, 0 8px 16px rgba(234, 179, 8, 0.15) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 0 #a16207, 0 6px 12px rgba(234, 179, 8, 0.15) !important;
             font-weight: 900 !important;
             transition: all 0.05s ease !important;
+            height: 46px !important;
+            max-height: 52px !important;
+            font-size: 1.4rem !important;
         }
 
         #btn-hint:active {
@@ -711,22 +763,32 @@
             box-shadow: 0 1px 0 #a16207, 0 4px 8px rgba(234, 179, 8, 0.15) !important;
         }
 
+        .comp-btn {
+            height: 46px !important;
+            max-height: 52px !important;
+            font-size: 1.4rem !important;
+        }
+
         /* Кнопка Проверить: сочный зеленый */
         #btn-check {
             background: linear-gradient(to bottom, #10b981, #059669) !important;
             color: #ffffff !important;
             border: none !important;
-            border-radius: 20px !important;
-            box-shadow: 0 7px 0 #047857, 0 12px 24px rgba(16, 185, 129, 0.2) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 6px 0 #047857, 0 10px 20px rgba(16, 185, 129, 0.2) !important;
             font-weight: 900 !important;
             transition: all 0.05s ease !important;
-            height: 60px !important;
+            height: 50px !important;
+            max-height: 54px !important;
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             gap: 8px !important;
-            margin-top: 10px !important;
+            margin-top: 4px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            font-size: 1.15rem !important;
         }
 
         #btn-check:hover {
@@ -735,7 +797,7 @@
 
         #btn-check:active {
             transform: translateY(4px) scale(0.95) !important;
-            box-shadow: 0 4px 0 #047857, 0 6px 12px rgba(16, 185, 129, 0.3) !important;
+            box-shadow: 0 3px 0 #047857, 0 6px 12px rgba(16, 185, 129, 0.3) !important;
         }
 
         #btn-check.opacity-50 {
@@ -743,6 +805,23 @@
             background: #64748b !important;
             box-shadow: 0 4px 0 #475569 !important;
             transform: translateY(4px) !important;
+        }
+
+        @media (max-height: 680px) {
+            .numpad-btn,
+            #btn-delete,
+            #btn-hint,
+            .comp-btn {
+                height: 40px !important;
+                font-size: 1.25rem !important;
+            }
+            #btn-check {
+                height: 44px !important;
+                font-size: 1.05rem !important;
+            }
+            #robik-svg {
+                max-height: 50px !important;
+            }
         }
 
         /* 7. Адаптивность примера через CSS Container Queries */
@@ -1907,7 +1986,7 @@
                             <!-- Батарея 1 -->
                             <div class="flex flex-col items-center gap-0.5 w-1/2">
                                 <div id="battery-1-card"
-                                    class="relative w-12 h-28 border-2 border-indigo-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden">
+                                    class="relative w-10 h-12 max-h-[60px] border-2 border-indigo-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse justify-between overflow-hidden">
                                     <!-- Крышка батареи -->
                                     <div id="battery-1-cap"
                                         class="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-indigo-500/50 rounded-t-sm">
@@ -1931,7 +2010,7 @@
                             <!-- Батарея 2 -->
                             <div class="flex flex-col items-center gap-0.5 w-1/2">
                                 <div id="battery-2-card"
-                                    class="relative w-12 h-28 border-2 border-emerald-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden">
+                                    class="relative w-10 h-12 max-h-[60px] border-2 border-emerald-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse justify-between overflow-hidden">
                                     <!-- Крышка батареи -->
                                     <div id="battery-2-cap"
                                         class="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-emerald-500/50 rounded-t-sm">
