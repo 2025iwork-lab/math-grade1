@@ -741,72 +741,124 @@
 
         // --- ЗВУКОВОЙ СИНТЕЗАТОР (Web Audio API) ---
         let audioCtx = null;
+        let isSoundMuted = localStorage.getItem('isSoundMuted') === 'true';
+
         function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            try {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        audioCtx = new AudioContextClass();
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+            } catch (e) {
+                console.warn('AudioContext initialization deferred:', e);
             }
         }
 
-        function playSound(type) {
+        function unlockAudio() {
+            initAudio();
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+                try {
+                    const buffer = audioCtx.createBuffer(1, 1, 22050);
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioCtx.destination);
+                    source.start(0);
+                } catch (e) {}
+            }
+            ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(evt => {
+                document.removeEventListener(evt, unlockAudio, true);
+                window.removeEventListener(evt, unlockAudio, true);
+            });
+        }
+        ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(evt => {
+            document.addEventListener(evt, unlockAudio, { once: true, capture: true });
+            window.addEventListener(evt, unlockAudio, { once: true, capture: true });
+        });
+
+        function playSound(soundName) {
+            isSoundMuted = localStorage.getItem('isSoundMuted') === 'true';
+            if (isSoundMuted || !soundName) return;
+
             initAudio();
             if (!audioCtx) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
 
+            const type = String(soundName).toLowerCase().replace(/\.(mp3|wav|ogg|m4a)$/i, '');
             const now = audioCtx.currentTime;
 
-            if (type === 'click') {
-                // Мягкий короткий «тик»
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
-                gain.gain.setValueAtTime(0.07, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-                osc.start(now); osc.stop(now + 0.06);
+            try {
+                if (type === 'click' || type === 'tap' || type === 'button') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(450, now + 0.04);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.start(now); osc.stop(now + 0.04);
 
-            } else if (type === 'correct') {
-                // Весёлый двухтональный звон монетки (C5 → E5)
-                [[523.25, 0], [659.25, 0.12], [783.99, 0.22]].forEach(([freq, delay]) => {
-                    const o = audioCtx.createOscillator();
-                    const g = audioCtx.createGain();
-                    o.connect(g); g.connect(audioCtx.destination);
-                    o.type = 'triangle';
-                    o.frequency.setValueAtTime(freq, now + delay);
-                    g.gain.setValueAtTime(0.0, now + delay);
-                    g.gain.linearRampToValueAtTime(0.12, now + delay + 0.01);
-                    g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.18);
-                    o.start(now + delay);
-                    o.stop(now + delay + 0.2);
-                });
+                } else if (type === 'correct' || type === 'right' || type === 'success') {
+                    const chordNotes = [
+                        { freq: 523.25, delay: 0, duration: 0.25 },
+                        { freq: 659.25, delay: 0.06, duration: 0.28 },
+                        { freq: 783.99, delay: 0.12, duration: 0.32 },
+                        { freq: 1046.50, delay: 0.18, duration: 0.40 }
+                    ];
+                    chordNotes.forEach(note => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(note.freq, now + note.delay);
+                        gain.gain.setValueAtTime(0, now + note.delay);
+                        gain.gain.linearRampToValueAtTime(0.14, now + note.delay + 0.015);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + note.delay + note.duration);
+                        osc.start(now + note.delay); osc.stop(now + note.delay + note.duration);
+                    });
 
-            } else if (type === 'incorrect') {
-                // Низкий мягкий нисходящий тон
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(220, now);
-                osc.frequency.linearRampToValueAtTime(110, now + 0.3);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
-                osc.start(now); osc.stop(now + 0.35);
+                } else if (type === 'error' || type === 'incorrect' || type === 'wrong') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.22);
+                    gain.gain.setValueAtTime(0.16, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    osc.start(now); osc.stop(now + 0.22);
 
-            } else if (type === 'goal' || type === 'triumph') {
-                // Торжественный триумфальный фанфар и перезвон (C5-E5-G5-C6-E6)
-                [[523.25, 0], [659.25, 0.08], [783.99, 0.16], [1046.5, 0.28], [1318.5, 0.4]].forEach(([freq, delay]) => {
-                    const o = audioCtx.createOscillator();
-                    const g = audioCtx.createGain();
-                    o.connect(g); g.connect(audioCtx.destination);
-                    o.type = 'triangle';
-                    o.frequency.setValueAtTime(freq, now + delay);
-                    g.gain.setValueAtTime(0.0, now + delay);
-                    g.gain.linearRampToValueAtTime(0.18, now + delay + 0.01);
-                    g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.35);
-                    o.start(now + delay);
-                    o.stop(now + delay + 0.4);
-                });
+                } else if (type === 'victory' || type === 'triumph' || type === 'goal') {
+                    const fanfare = [
+                        { freq: 523.25, delay: 0, duration: 0.2 },
+                        { freq: 659.25, delay: 0.08, duration: 0.22 },
+                        { freq: 783.99, delay: 0.16, duration: 0.25 },
+                        { freq: 1046.50, delay: 0.26, duration: 0.45 }
+                    ];
+                    fanfare.forEach(n => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(n.freq, now + n.delay);
+                        gain.gain.setValueAtTime(0, now + n.delay);
+                        gain.gain.linearRampToValueAtTime(0.16, now + n.delay + 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.delay + n.duration);
+                        osc.start(now + n.delay); osc.stop(now + n.delay + n.duration);
+                    });
+                }
+            } catch (e) {
+                console.warn('Audio playback error:', e);
             }
         }
 

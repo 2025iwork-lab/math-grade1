@@ -4470,7 +4470,7 @@
             engine = new EmbeddedMathEngine();
         }
 
-        // --- ЗВУКОВОЙ СИНТЕЗАТОР И MUTE ТАЙМЕР ---
+        // --- ЗВУКОВОЙ СИНТЕЗАТОР И MUTE ТАЙМЕР (Web Audio API для iOS + Android) ---
         let audioCtx = null;
         let isSoundMuted = localStorage.getItem('isSoundMuted') === 'true';
 
@@ -4482,6 +4482,7 @@
         }
 
         function toggleMuteSound() {
+            initAudio();
             isSoundMuted = !isSoundMuted;
             localStorage.setItem('isSoundMuted', isSoundMuted ? 'true' : 'false');
             updateMuteButtonUI();
@@ -4491,6 +4492,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', updateMuteButtonUI);
+        updateMuteButtonUI();
 
         function initAudio() {
             try {
@@ -4508,12 +4510,31 @@
             }
         }
 
-        // Автоматическая разблокировка звукового контекста при первом клике/касании
+        // Автоматическая разблокировка звукового контекста при первом клике/касании (iOS Unlock)
         function unlockAudio() {
             initAudio();
-            ['click', 'touchstart', 'keydown'].forEach(evt => window.removeEventListener(evt, unlockAudio));
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+                try {
+                    const buffer = audioCtx.createBuffer(1, 1, 22050);
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioCtx.destination);
+                    source.start(0);
+                } catch (e) {}
+            }
+            ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(evt => {
+                document.removeEventListener(evt, unlockAudio, true);
+                window.removeEventListener(evt, unlockAudio, true);
+            });
         }
-        ['click', 'touchstart', 'keydown'].forEach(evt => window.addEventListener(evt, unlockAudio, { once: true }));
+
+        ['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(evt => {
+            document.addEventListener(evt, unlockAudio, { once: true, capture: true });
+            window.addEventListener(evt, unlockAudio, { once: true, capture: true });
+        });
 
         // --- РЕАКЦИИ И АНИМАЦИИ МАСКОТОВ ---
         function triggerMascotReaction(type) {
@@ -4543,9 +4564,7 @@
             }
         }
 
-        // --- ЗВУКОВОЙ МЕНЕДЖЕР (playSound с Web Audio API и Mute) ---
-        const audioCache = {};
-
+        // --- ЗВУКОВОЙ МЕНЕДЖЕР (playSound с Web Audio API) ---
         function playSound(soundName) {
             if (isSoundMuted || !soundName) return; // Если звук выключен — выходим сразу
 
@@ -4555,58 +4574,77 @@
                 audioCtx.resume().catch(() => {});
             }
 
-            const type = String(soundName).toLowerCase().replace(/\.mp3$/, '');
+            const type = String(soundName).toLowerCase().replace(/\.(mp3|wav|ogg|m4a)$/i, '');
             const now = audioCtx.currentTime;
 
             try {
-                if (type === 'correct') {
-                    // Ретро-звук монеты: 2 быстрых высоких тона (987Hz -> через 0.08s -> 1318Hz, тип sine/square)
-                    const coinTones = [
-                        { freq: 987, delay: 0, duration: 0.1 },
-                        { freq: 1318, delay: 0.08, duration: 0.22 }
+                if (type === 'click' || type === 'tap' || type === 'button') {
+                    // Короткий приятный щелчок/пик при нажатии кнопок
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(450, now + 0.04);
+
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+
+                } else if (type === 'correct' || type === 'right' || type === 'success') {
+                    // Мелодичный мажорный аккорд/сигнал при правильном ответе (C5, E5, G5, C6)
+                    const chordNotes = [
+                        { freq: 523.25, delay: 0, duration: 0.25 },     // C5
+                        { freq: 659.25, delay: 0.06, duration: 0.28 },  // E5
+                        { freq: 783.99, delay: 0.12, duration: 0.32 },  // G5
+                        { freq: 1046.50, delay: 0.18, duration: 0.40 }   // C6
                     ];
 
-                    coinTones.forEach(t => {
+                    chordNotes.forEach(note => {
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
 
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(t.freq, now + t.delay);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(note.freq, now + note.delay);
 
-                        gain.gain.setValueAtTime(0, now + t.delay);
-                        gain.gain.linearRampToValueAtTime(0.15, now + t.delay + 0.01);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + t.delay + t.duration);
+                        gain.gain.setValueAtTime(0, now + note.delay);
+                        gain.gain.linearRampToValueAtTime(0.14, now + note.delay + 0.015);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + note.delay + note.duration);
 
-                        osc.start(now + t.delay);
-                        osc.stop(now + t.delay + t.duration);
+                        osc.start(now + note.delay);
+                        osc.stop(now + note.delay + note.duration);
                     });
 
-                } else if (type === 'error' || type === 'incorrect') {
-                    // Короткий, глухой низкий звук: 300Hz спадает до 150Hz (тип triangle)
+                } else if (type === 'error' || type === 'incorrect' || type === 'wrong') {
+                    // Мягкий низкий сигнал при ошибке (180Hz -> 110Hz)
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
 
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.22);
 
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    gain.gain.setValueAtTime(0.16, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
                     osc.start(now);
-                    osc.stop(now + 0.25);
+                    osc.stop(now + 0.22);
 
                 } else if (type === 'victory' || type === 'triumph' || type === 'goal') {
-                    // Короткая радостная фанфара из 4 быстро идущих нот по нарастающей (523, 659, 784, 1046 Hz)
+                    // Торжественный мажорный арпеджио / фанфара
                     const fanfare = [
-                        { freq: 523.25, delay: 0 },
-                        { freq: 659.25, delay: 0.09 },
-                        { freq: 783.99, delay: 0.18 },
-                        { freq: 1046.50, delay: 0.27 }
+                        { freq: 523.25, delay: 0, duration: 0.2 },
+                        { freq: 659.25, delay: 0.08, duration: 0.22 },
+                        { freq: 783.99, delay: 0.16, duration: 0.25 },
+                        { freq: 1046.50, delay: 0.26, duration: 0.45 }
                     ];
 
                     fanfare.forEach(n => {
@@ -4619,46 +4657,12 @@
                         osc.frequency.setValueAtTime(n.freq, now + n.delay);
 
                         gain.gain.setValueAtTime(0, now + n.delay);
-                        gain.gain.linearRampToValueAtTime(0.18, now + n.delay + 0.01);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.delay + 0.28);
+                        gain.gain.linearRampToValueAtTime(0.16, now + n.delay + 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.delay + n.duration);
 
                         osc.start(now + n.delay);
-                        osc.stop(now + n.delay + 0.3);
+                        osc.stop(now + n.delay + n.duration);
                     });
-
-                } else if (type === 'click') {
-                    // Мягкий короткий клик
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
-
-                    gain.gain.setValueAtTime(0.08, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-                    osc.start(now);
-                    osc.stop(now + 0.05);
-
-                } else {
-                    // Запасное воспроизведение внешнего mp3 файла (если есть)
-                    let fileName = soundName;
-                    if (!fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) fileName += '.mp3';
-
-                    let audio = audioCache[fileName];
-                    if (!audio) {
-                        audio = new Audio(fileName);
-                        audioCache[fileName] = audio;
-                    } else {
-                        audio.currentTime = 0;
-                    }
-                    const promise = audio.play();
-                    if (promise !== undefined) {
-                        promise.catch(() => {});
-                    }
                 }
             } catch (e) {
                 console.warn('Audio playback error:', e);
