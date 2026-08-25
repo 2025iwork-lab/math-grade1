@@ -39,7 +39,6 @@ def setup_bot_commands():
         commands = [
             types.BotCommand("start", "🚀 Запустить тренажёр"),
             types.BotCommand("link", "📱 Ссылка для ребёнка"),
-            types.BotCommand("parent", "📱 Ссылка для ребёнка"),
         ]
         bot.set_my_commands(commands)
     except Exception as e:
