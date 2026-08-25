@@ -63,36 +63,75 @@ def setup_bot_commands():
     except Exception as e:
         print(f"Error setting bot commands: {e}")
 
-def send_daily_digests(date_str):
+def send_1730_child_reminders(date_str):
+    links = load_parent_links()
     stats = load_daily_stats()
-    if date_str not in stats:
-        return
+    day_data = stats.get(date_str, {})
 
-    day_data = stats[date_str]
-    for child_id_str, c_stats in day_data.items():
-        parent_id = c_stats.get('parent_id')
+    for child_id_str in links.keys():
+        c_stats = day_data.get(child_id_str, {})
+        sessions_count = c_stats.get('sessions_count', 0)
+        if sessions_count == 0:
+            msg_text = (
+                "🚀 Привет! Пора размять мозги!\n"
+                "Сегодня ещё не было тренировок (0 из 2). Заходи решить примеры и сохранить ударный режим! 🔥"
+            )
+            try:
+                bot.send_message(int(child_id_str), msg_text, reply_markup=get_main_reply_keyboard())
+            except Exception as e:
+                print(f"Failed to send 17:30 reminder to child {child_id_str}: {e}")
+
+def send_1900_child_reminders(date_str):
+    links = load_parent_links()
+    stats = load_daily_stats()
+    day_data = stats.get(date_str, {})
+
+    for child_id_str in links.keys():
+        c_stats = day_data.get(child_id_str, {})
+        sessions_count = c_stats.get('sessions_count', 0)
+        if sessions_count == 1:
+            msg_text = (
+                "🎯 Остался один шаг!\n"
+                "Ты выполнил 1 тренировку из 2. Сделай ещё один подход, чтобы закрыть дневную цель! ⭐️"
+            )
+            try:
+                bot.send_message(int(child_id_str), msg_text, reply_markup=get_main_reply_keyboard())
+            except Exception as e:
+                print(f"Failed to send 19:00 reminder to child {child_id_str}: {e}")
+
+def send_daily_digests(date_str):
+    links = load_parent_links()
+    stats = load_daily_stats()
+    day_data = stats.get(date_str, {})
+
+    for child_id_str, parent_id in links.items():
         if not parent_id:
             continue
 
-        child_name = c_stats.get('child_name', 'Ребёнок')
+        c_stats = day_data.get(child_id_str, {})
         sessions_count = c_stats.get('sessions_count', 0)
+        child_name = c_stats.get('child_name', 'Ребёнок')
         total_solved = c_stats.get('total_solved', 0)
         correct_solved = c_stats.get('correct_solved', 0)
         total_stars = c_stats.get('total_stars', 0)
 
-        if total_solved > 0:
-            accuracy = round((correct_solved / total_solved) * 100)
+        if sessions_count >= 1:
+            accuracy = round((correct_solved / total_solved) * 100) if total_solved > 0 else 0
+            status_note = "✅ Дневная норма выполнена на отлично! 🚀" if sessions_count >= 2 else "⏳ Занятия начаты, но дневная норма не закрыта."
+            msg_text = (
+                f"🌙 Итоги дня по математике ({child_name}):\n\n"
+                f"🎯 План на день: {sessions_count} из 2 сессий\n"
+                f"🧮 Всего решено примеров: {total_solved}\n"
+                f"⭐ Без ошибок: {correct_solved} из {total_solved} ({accuracy}%)\n"
+                f"💰 Заработано звёзд: +{total_stars}\n\n"
+                f"{status_note}"
+            )
         else:
-            accuracy = 0
-
-        msg_text = (
-            f"🌙 Итоги дня по математике ({child_name}):\n\n"
-            f"🎯 Количество тренировок: {sessions_count}\n"
-            f"🧮 Всего решено примеров: {total_solved}\n"
-            f"⭐ Без ошибок: {correct_solved} из {total_solved} ({accuracy}%)\n"
-            f"💰 Заработано звёзд: +{total_stars}\n\n"
-            f"Отличный результат за сегодня! 🚀"
-        )
+            msg_text = (
+                f"🌙 Итоги дня по математике ({child_name}):\n\n"
+                f"⚠️ Сегодня занятий не было (0 из 2 сессий).\n"
+                f"Напомните ребёнку потренироваться завтра, чтобы не сбить ударный режим! 🔥"
+            )
 
         try:
             bot.send_message(parent_id, msg_text)
@@ -100,16 +139,34 @@ def send_daily_digests(date_str):
             print(f"Failed to send digest to parent {parent_id}: {e}")
 
 def daily_digest_scheduler():
-    last_sent_date = None
+    last_sent_1730 = None
+    last_sent_1900 = None
+    last_sent_2000 = None
+
     while True:
         try:
             msk_tz = datetime.timezone(datetime.timedelta(hours=3))
             now = datetime.datetime.now(msk_tz)
+            today_str = now.strftime('%Y-%m-%d')
+
+            # 17:30 Напоминание детям (0 сессий)
+            if now.hour == 17 and now.minute == 30:
+                if last_sent_1730 != today_str:
+                    send_1730_child_reminders(today_str)
+                    last_sent_1730 = today_str
+
+            # 19:00 Напоминание детям (1 сессия)
+            if now.hour == 19 and now.minute == 0:
+                if last_sent_1900 != today_str:
+                    send_1900_child_reminders(today_str)
+                    last_sent_1900 = today_str
+
+            # 20:00 Вечерний дайджест родителям
             if now.hour == 20 and now.minute == 0:
-                today_str = now.strftime('%Y-%m-%d')
-                if last_sent_date != today_str:
+                if last_sent_2000 != today_str:
                     send_daily_digests(today_str)
-                    last_sent_date = today_str
+                    last_sent_2000 = today_str
+
             time.sleep(30)
         except Exception as e:
             print(f"Error in daily_digest_scheduler: {e}")
