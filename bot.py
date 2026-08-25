@@ -11,6 +11,7 @@ TOKEN = '8647743816:AAHxk9I_dnFOf6K3KHyrv7CBF4sEQ8SFftI'
 WEBAPP_URL = 'https://2025iwork-lab.github.io/math-grade1/public/'
 PARENT_LINKS_FILE = 'parent_links.json'
 DAILY_STATS_FILE = 'daily_stats.json'
+STATS_HISTORY_FILE = 'stats_history.json'
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -46,11 +47,29 @@ def save_daily_stats(stats):
     except Exception as e:
         print(f"Error saving {DAILY_STATS_FILE}: {e}")
 
+def load_stats_history():
+    if os.path.exists(STATS_HISTORY_FILE):
+        try:
+            with open(STATS_HISTORY_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading {STATS_HISTORY_FILE}: {e}")
+    return []
+
+def save_stats_history(history):
+    try:
+        with open(STATS_HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving {STATS_HISTORY_FILE}: {e}")
+
 def get_main_reply_keyboard():
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn_app = types.KeyboardButton("🚀 Открыть тренажёр", web_app=types.WebAppInfo(url=WEBAPP_URL))
     btn_link = types.KeyboardButton("📱 Ссылка для ребёнка")
+    btn_stats = types.KeyboardButton("📊 Статистика")
     keyboard.add(btn_app, btn_link)
+    keyboard.add(btn_stats)
     return keyboard
 
 def setup_bot_commands():
@@ -58,6 +77,7 @@ def setup_bot_commands():
         commands = [
             types.BotCommand("start", "🚀 Запустить тренажёр"),
             types.BotCommand("link", "📱 Ссылка для ребёнка"),
+            types.BotCommand("stats", "📊 Статистика ребёнка"),
         ]
         bot.set_my_commands(commands)
     except Exception as e:
@@ -200,8 +220,30 @@ def handle_web_app_data(message):
             parent_id = links.get(str(child_id))
 
             msk_tz = datetime.timezone(datetime.timedelta(hours=3))
-            today_str = datetime.datetime.now(msk_tz).strftime('%Y-%m-%d')
+            now = datetime.datetime.now(msk_tz)
+            today_str = now.strftime('%Y-%m-%d')
+            timestamp = int(data.get('timestamp') or time.time())
 
+            correct = int(data.get('correct', 0))
+            total = int(data.get('total', 0))
+            errors = int(data.get('errors', 0))
+            stars = int(data.get('stars', 0))
+
+            # 1. Сохранение истории сессии в stats_history.json
+            history = load_stats_history()
+            history.append({
+                "child_id": str(child_id),
+                "child_name": child_name,
+                "date": today_str,
+                "correct": correct,
+                "total": total,
+                "errors": errors,
+                "stars": stars,
+                "timestamp": timestamp
+            })
+            save_stats_history(history)
+
+            # 2. Обновление ежедневных итогов в daily_stats.json
             stats = load_daily_stats()
             if today_str not in stats:
                 stats[today_str] = {}
@@ -222,14 +264,110 @@ def handle_web_app_data(message):
             c_stats['parent_id'] = parent_id or c_stats.get('parent_id')
             c_stats['child_name'] = child_name
             c_stats['sessions_count'] += 1
-            c_stats['total_solved'] += int(data.get('total', 0))
-            c_stats['correct_solved'] += int(data.get('correct', 0))
-            c_stats['errors'] += int(data.get('errors', 0))
-            c_stats['total_stars'] += int(data.get('stars', 0))
+            c_stats['total_solved'] += total
+            c_stats['correct_solved'] += correct
+            c_stats['errors'] += errors
+            c_stats['total_stars'] += stars
 
             save_daily_stats(stats)
     except Exception as e:
         print(f"Error handling web_app_data: {e}")
+
+@bot.message_handler(commands=['stats'])
+@bot.message_handler(func=lambda msg: msg.text and 'Статистика' in msg.text)
+def send_stats_command(message):
+    try:
+        user_id = message.from_user.id
+        links = load_parent_links()
+
+        # Поиск всех детей, привязанных к родительскому аккаунту
+        linked_children = []
+        for child_id_str, p_id in links.items():
+            if p_id and (str(p_id) == str(user_id)):
+                linked_children.append(child_id_str)
+
+        if not linked_children:
+            bot.send_message(
+                message.chat.id,
+                "У вас пока нет привязанных устройств. Отправьте ребёнку ссылку по кнопке \"📱 Ссылка для ребёнка\".",
+                reply_markup=get_main_reply_keyboard()
+            )
+            return
+
+        history = load_stats_history()
+        msk_tz = datetime.timezone(datetime.timedelta(hours=3))
+        now_dt = datetime.datetime.now(msk_tz)
+        today_dt = now_dt.date()
+
+        for child_id in linked_children:
+            child_records = [r for r in history if str(r.get('child_id')) == str(child_id)]
+
+            child_name = "Ребёнок"
+            if child_records and child_records[-1].get('child_name'):
+                child_name = child_records[-1]['child_name']
+
+            today_str = today_dt.strftime('%Y-%m-%d')
+            d7_cutoff = today_dt - datetime.timedelta(days=6)
+            d30_cutoff = today_dt - datetime.timedelta(days=29)
+
+            def calc_period_stats(records_list, filter_func):
+                filtered = [r for r in records_list if filter_func(r)]
+                sessions = len(filtered)
+                total = sum(int(r.get('total', 0)) for r in filtered)
+                correct = sum(int(r.get('correct', 0)) for r in filtered)
+                stars = sum(int(r.get('stars', 0)) for r in filtered)
+                accuracy = round((correct / total) * 100) if total > 0 else 0
+                return {
+                    'sessions': sessions,
+                    'total': total,
+                    'correct': correct,
+                    'stars': stars,
+                    'accuracy': accuracy
+                }
+
+            def is_today(rec):
+                return rec.get('date') == today_str
+
+            def is_7days(rec):
+                try:
+                    rec_date = datetime.datetime.strptime(rec.get('date'), '%Y-%m-%d').date()
+                    return rec_date >= d7_cutoff
+                except Exception:
+                    return False
+
+            def is_30days(rec):
+                try:
+                    rec_date = datetime.datetime.strptime(rec.get('date'), '%Y-%m-%d').date()
+                    return rec_date >= d30_cutoff
+                except Exception:
+                    return False
+
+            st_today = calc_period_stats(child_records, is_today)
+            st_7 = calc_period_stats(child_records, is_7days)
+            st_30 = calc_period_stats(child_records, is_30days)
+
+            msg_text = (
+                f"📊 Статистика успехов ({child_name}):\n\n"
+                f"📅 Сегодня:\n"
+                f"• Сессий: {st_today['sessions']}\n"
+                f"• Решено примеров: {st_today['total']}\n"
+                f"• Точность: {st_today['accuracy']}% ⭐\n"
+                f"• Звёзд: +{st_today['stars']} 💰\n\n"
+                f"📈 За последние 7 дней:\n"
+                f"• Сессий: {st_7['sessions']}\n"
+                f"• Решено примеров: {st_7['total']}\n"
+                f"• Точность: {st_7['accuracy']}% ⭐\n"
+                f"• Звёзд: +{st_7['stars']} 💰\n\n"
+                f"🏆 За последние 30 дней:\n"
+                f"• Сессий: {st_30['sessions']}\n"
+                f"• Решено примеров: {st_30['total']}\n"
+                f"• Точность: {st_30['accuracy']}% ⭐\n"
+                f"• Звёзд: +{st_30['stars']} 💰"
+            )
+
+            bot.send_message(message.chat.id, msg_text, reply_markup=get_main_reply_keyboard())
+    except Exception as e:
+        print(f"Error handling /stats command: {e}")
 
 @bot.message_handler(commands=['link', 'parent'])
 @bot.message_handler(func=lambda msg: msg.text and 'Ссылка для ребёнка' in msg.text)
