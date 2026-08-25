@@ -48,7 +48,7 @@ def parent_command(message):
         user_id = message.from_user.id
         bot_username = bot.get_me().username
         link = f"https://t.me/{bot_username}?start=parent_{user_id}"
-        msg = f"Чтобы подключить устройство ребёнка, перешлите ему эту ссылку:\n{link}"
+        msg = f"📱 Ссылка для устройства ребёнка:\nПерешлите эту ссылку ребёнку на его телефон или планшет:\n\n{link}\n\nКак только он перейдёт по ней, его прогресс будет приходить вам в этот чат! 🎉"
         bot.send_message(message.chat.id, msg)
     except Exception as e:
         print(f"Error handling /parent command: {e}")
