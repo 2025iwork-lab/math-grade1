@@ -27,6 +27,24 @@ def save_parent_links(links):
     except Exception as e:
         print(f"Error saving {PARENT_LINKS_FILE}: {e}")
 
+def get_main_reply_keyboard():
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn_app = types.KeyboardButton("🚀 Открыть тренажёр", web_app=types.WebAppInfo(url=WEBAPP_URL))
+    btn_link = types.KeyboardButton("📱 Ссылка для ребёнка")
+    keyboard.add(btn_app, btn_link)
+    return keyboard
+
+def setup_bot_commands():
+    try:
+        commands = [
+            types.BotCommand("start", "🚀 Запустить тренажёр"),
+            types.BotCommand("link", "📱 Ссылка для ребёнка"),
+            types.BotCommand("parent", "📱 Ссылка для ребёнка"),
+        ]
+        bot.set_my_commands(commands)
+    except Exception as e:
+        print(f"Error setting bot commands: {e}")
+
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -42,16 +60,17 @@ def run_server():
     server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
     server.serve_forever()
 
-@bot.message_handler(commands=['parent'])
-def parent_command(message):
+@bot.message_handler(commands=['link', 'parent'])
+@bot.message_handler(func=lambda msg: msg.text and 'Ссылка для ребёнка' in msg.text)
+def send_child_invite_link(message):
     try:
         user_id = message.from_user.id
         bot_username = bot.get_me().username
         link = f"https://t.me/{bot_username}?start=parent_{user_id}"
-        msg = f"📱 Ссылка для устройства ребёнка:\nПерешлите эту ссылку ребёнку на его телефон или планшет:\n\n{link}\n\nКак только он перейдёт по ней, его прогресс будет приходить вам в этот чат! 🎉"
-        bot.send_message(message.chat.id, msg)
+        msg_text = f"📱 Ссылка для устройства ребёнка:\nПерешлите эту ссылку ребёнку на его телефон или планшет:\n\n{link}\n\nКак только он перейдёт по ней, его прогресс будет приходить вам в этот чат! 🎉"
+        bot.send_message(message.chat.id, msg_text, reply_markup=get_main_reply_keyboard())
     except Exception as e:
-        print(f"Error handling /parent command: {e}")
+        print(f"Error sending child invite link: {e}")
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -67,13 +86,10 @@ def start(message):
             save_parent_links(links)
 
             # Сообщение ребёнку
-            markup = types.InlineKeyboardMarkup()
-            btn = types.InlineKeyboardButton("🚀 Открыть тренажёр", web_app=types.WebAppInfo(url=WEBAPP_URL))
-            markup.add(btn)
             bot.send_message(
                 message.chat.id,
                 "Привет! Твой профиль успешно привязан к родителю. Приятных тренировок! 🚀",
-                reply_markup=markup
+                reply_markup=get_main_reply_keyboard()
             )
 
             # Уведомление родителю
@@ -84,15 +100,13 @@ def start(message):
             return
 
     # Штатный запуск без параметров
-    markup = types.InlineKeyboardMarkup()
-    btn = types.InlineKeyboardButton("🚀 Открыть тренажёр", web_app=types.WebAppInfo(url=WEBAPP_URL))
-    markup.add(btn)
     bot.send_message(
         message.chat.id,
         "Привет! 👋 Нажми на кнопку ниже, чтобы запустить тренажёр по математике:",
-        reply_markup=markup
+        reply_markup=get_main_reply_keyboard()
     )
 
 if __name__ == '__main__':
+    setup_bot_commands()
     threading.Thread(target=run_server, daemon=True).start()
     bot.infinity_polling(skip_pending=True)
