@@ -7,7 +7,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import telebot
 from telebot import types
 
-TOKEN = '8647743816:AAHxk9I_dnFOf6K3KHyrv7CBF4sEQ8SFftI'
+TOKEN = os.getenv("BOT_TOKEN", "8647743816:AAEZsQYGw63XrPYrWjScJjWPgG5zCftgE1I").strip()
 WEBAPP_URL = 'https://2025iwork-lab.github.io/math-grade1/public/'
 PARENT_LINKS_FILE = 'parent_links.json'
 DAILY_STATS_FILE = 'daily_stats.json'
