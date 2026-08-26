@@ -12,8 +12,43 @@ WEBAPP_URL = 'https://2025iwork-lab.github.io/math-grade1/public/'
 PARENT_LINKS_FILE = 'parent_links.json'
 DAILY_STATS_FILE = 'daily_stats.json'
 STATS_HISTORY_FILE = 'stats_history.json'
+SUBSCRIPTIONS_FILE = 'subscriptions.json'
+ADMIN_IDS = [623166117]
 
 bot = telebot.TeleBot(TOKEN)
+
+def load_subscriptions():
+    if os.path.exists(SUBSCRIPTIONS_FILE):
+        try:
+            with open(SUBSCRIPTIONS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading {SUBSCRIPTIONS_FILE}: {e}")
+    return {}
+
+def save_subscriptions(subs):
+    try:
+        with open(SUBSCRIPTIONS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(subs, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving {SUBSCRIPTIONS_FILE}: {e}")
+
+def get_subscription_list():
+    subs = load_subscriptions()
+    if isinstance(subs, dict):
+        if "user_id" in subs and "status" in subs:
+            return [subs]
+        res = []
+        for k, v in subs.items():
+            if isinstance(v, dict):
+                v_copy = dict(v)
+                if "user_id" not in v_copy:
+                    v_copy["user_id"] = str(k)
+                res.append(v_copy)
+        return res
+    elif isinstance(subs, list):
+        return subs
+    return []
 
 def load_parent_links():
     if os.path.exists(PARENT_LINKS_FILE):
@@ -414,6 +449,152 @@ def start(message):
         "Привет! 👋 Нажми на кнопку ниже, чтобы запустить тренажёр по математике:",
         reply_markup=get_main_reply_keyboard()
     )
+
+@bot.message_handler(commands=['admin'])
+def admin_command(message):
+    if message.from_user.id not in ADMIN_IDS:
+        return
+    try:
+        parent_links = load_parent_links()
+        daily_stats = load_daily_stats()
+        stats_history = load_stats_history()
+        subs_list = get_subscription_list()
+
+        msk_tz = datetime.timezone(datetime.timedelta(hours=3))
+        now_dt = datetime.datetime.now(msk_tz)
+        today_dt = now_dt.date()
+        today_str = today_dt.strftime('%Y-%m-%d')
+        month_str = today_str[:7]
+
+        # 1. Пользователи
+        user_ids = set()
+        for child_id_str, parent_id in parent_links.items():
+            if child_id_str:
+                user_ids.add(str(child_id_str))
+            if parent_id:
+                user_ids.add(str(parent_id))
+
+        for day_data in daily_stats.values():
+            if isinstance(day_data, dict):
+                for child_key, c_info in day_data.items():
+                    user_ids.add(str(child_key))
+                    p_id = c_info.get('parent_id')
+                    if p_id:
+                        user_ids.add(str(p_id))
+
+        for rec in stats_history:
+            c_id = rec.get('child_id')
+            if c_id:
+                user_ids.add(str(c_id))
+
+        for sub in subs_list:
+            u_id = sub.get('user_id')
+            if u_id:
+                user_ids.add(str(u_id))
+
+        total_users = len(user_ids)
+        parent_child_pairs = sum(1 for c_id, p_id in parent_links.items() if p_id)
+
+        # 2. Монетизация
+        paying_user_ids = set()
+        revenue_today = 0
+        revenue_month = 0
+        revenue_all = 0
+
+        for sub in subs_list:
+            u_id = sub.get('user_id')
+            history = sub.get('history', [])
+            status = sub.get('status', '')
+            amount = sub.get('amount', 0)
+
+            if status == 'active' or (isinstance(history, list) and len(history) > 0) or amount > 0:
+                if u_id:
+                    paying_user_ids.add(str(u_id))
+
+            if history and isinstance(history, list):
+                for item in history:
+                    if isinstance(item, dict):
+                        amt = int(item.get('amount', 0))
+                        p_date = str(item.get('date', ''))
+                        revenue_all += amt
+                        if p_date == today_str:
+                            revenue_today += amt
+                        if p_date.startswith(month_str):
+                            revenue_month += amt
+            else:
+                amt = int(amount)
+                start_date = str(sub.get('start_date', ''))
+                if amt > 0:
+                    revenue_all += amt
+                    if start_date == today_str:
+                        revenue_today += amt
+                    if start_date.startswith(month_str):
+                        revenue_month += amt
+
+        paying_count = len(paying_user_ids)
+        conversion_rate = round((paying_count / total_users) * 100, 1) if total_users > 0 else 0.0
+
+        # 3. Сроки подписок
+        active_subs = 0
+        expiring_subs = 0
+        expired_subs = 0
+
+        for sub in subs_list:
+            exp_str = sub.get('expire_date')
+            if not exp_str:
+                continue
+            try:
+                exp_date = datetime.datetime.strptime(exp_str, '%Y-%m-%d').date()
+                days_left = (exp_date - today_dt).days
+                if exp_date >= today_dt:
+                    active_subs += 1
+                    if 0 <= days_left <= 3:
+                        expiring_subs += 1
+                else:
+                    expired_subs += 1
+            except Exception:
+                pass
+
+        # 4. Активность за сегодня
+        today_data = daily_stats.get(today_str, {})
+        dau_today = len(today_data)
+        sessions_today = sum(int(c.get('sessions_count', 0)) for c in today_data.values())
+        quota_met_today = sum(1 for c in today_data.values() if int(c.get('sessions_count', 0)) >= 2)
+        solved_today = sum(int(c.get('total_solved', 0)) for c in today_data.values())
+
+        # 5. За все время
+        solved_all_time = sum(int(r.get('total', 0)) for r in stats_history)
+        correct_all_time = sum(int(r.get('correct', 0)) for r in stats_history)
+        avg_accuracy = round((correct_all_time / solved_all_time) * 100, 1) if solved_all_time > 0 else 0.0
+
+        msg_text = (
+            f"📊 Секретная бизнес-аналитика владельца (/admin)\n\n"
+            f"👥 Пользователи:\n"
+            f"• Всего пользователей в системе: {total_users}\n"
+            f"• Пар «родитель-ребёнок»: {parent_child_pairs}\n\n"
+            f"💰 Монетизация:\n"
+            f"• Число платящих: {paying_count}\n"
+            f"• Конверсия в оплату: {conversion_rate}%\n"
+            f"• Сумма оплат за сегодня: {revenue_today} ₽\n"
+            f"• Сумма оплат за текущий месяц: {revenue_month} ₽\n"
+            f"• Сумма оплат за всё время: {revenue_all} ₽\n\n"
+            f"⏳ Сроки подписок:\n"
+            f"• Активные: {active_subs}\n"
+            f"• Истекающие (1–3 дня): {expiring_subs}\n"
+            f"• Истёкшие: {expired_subs}\n\n"
+            f"⚡️ Активность за сегодня ({today_str}):\n"
+            f"• Уникальные ученики (DAU): {dau_today}\n"
+            f"• Число сессий: {sessions_today}\n"
+            f"• Выполнили норму (≥2 сессий): {quota_met_today}\n"
+            f"• Решено примеров: {solved_today}\n\n"
+            f"🏆 За всё время:\n"
+            f"• Всего решено задач: {solved_all_time}\n"
+            f"• Средний % точности по всей базе: {avg_accuracy}%"
+        )
+
+        bot.send_message(message.chat.id, msg_text)
+    except Exception as e:
+        print(f"Error handling /admin command: {e}")
 
 if __name__ == '__main__':
     setup_bot_commands()
