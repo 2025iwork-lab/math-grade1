@@ -29,20 +29,48 @@ bot = telebot.TeleBot(TOKEN)
 def get_db_connection():
     if not HAS_PSYCOPG2:
         return None
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
+    url = os.getenv("DATABASE_URL")
+    if not url:
         return None
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
     try:
-        conn = psycopg2.connect(db_url, connect_timeout=5)
+        conn = psycopg2.connect(url, connect_timeout=5)
         return conn
     except Exception as e:
-        print(f"[DB ERROR] Failed to connect to PostgreSQL: {e}")
+        print(f"[DB ERROR] Connection failed: {type(e).__name__}: {e}")
         return None
+
+def upsert_user(user_id, username=None, first_name=None):
+    if not user_id:
+        return
+    try:
+        u_id = int(user_id)
+    except (ValueError, TypeError):
+        return
+
+    conn = get_db_connection()
+    if not conn:
+        return
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO users (user_id, username, first_name)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        username = COALESCE(EXCLUDED.username, users.username),
+                        first_name = COALESCE(EXCLUDED.first_name, users.first_name);
+                """, (u_id, username, first_name))
+    except Exception as e:
+        print(f"[DB ERROR] Error upserting user {u_id}: {type(e).__name__}: {e}")
+    finally:
+        conn.close()
 
 def init_db():
     conn = get_db_connection()
     if not conn:
-        print("[DB INFO] PostgreSQL connection is not available. Operating in local JSON fallback mode.")
+        print(f"[DB INFO] PostgreSQL connection is not available. DATABASE_URL is set: {bool(os.getenv('DATABASE_URL'))}. Operating in local JSON fallback mode.")
         return False
     try:
         with conn:
@@ -100,7 +128,7 @@ def init_db():
         print("[DB INFO] Database schema initialized successfully.")
         return True
     except Exception as e:
-        print(f"[DB ERROR] Failed to initialize schema: {e}")
+        print(f"[DB ERROR] Failed to initialize schema: {type(e).__name__}: {e}")
         return False
     finally:
         conn.close()
@@ -691,8 +719,12 @@ def handle_web_app_data(message):
         raw_data = message.web_app_data.data
         data = json.loads(raw_data)
         if data.get('type') == 'session_complete':
-            child_id = message.from_user.id
-            child_name = message.from_user.first_name or "Ребёнок"
+            user = message.from_user
+            child_id = user.id
+            username = user.username
+            child_name = user.first_name or "Ребёнок"
+
+            upsert_user(child_id, username, child_name)
 
             links = load_parent_links()
             parent_id = links.get(str(child_id))
@@ -861,6 +893,13 @@ def send_child_invite_link(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    try:
+        user = message.from_user
+        if user:
+            upsert_user(user.id, user.username, user.first_name)
+    except Exception as e:
+        print(f"[DB ERROR] Failed to upsert user on /start: {type(e).__name__}: {e}")
+
     args = message.text.split()
     if len(args) > 1 and args[1].startswith('parent_'):
         parent_id_str = args[1].replace('parent_', '')
@@ -1040,6 +1079,7 @@ def admin_command(message):
         print(f"Error handling /admin command: {e}")
 
 if __name__ == '__main__':
+    print(f"[DB INFO] Initializing DB... URL present: {bool(os.getenv('DATABASE_URL'))}")
     setup_bot_commands()
     if init_db():
         migrate_json_to_db()
