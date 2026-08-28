@@ -734,8 +734,8 @@ def handle_web_app_data(message):
             today_str = now.strftime('%Y-%m-%d')
             timestamp = int(data.get('timestamp') or time.time())
 
-            correct = int(data.get('correct', 0))
-            total = int(data.get('total', 0))
+            correct = int(data.get('correct') if data.get('correct') is not None else data.get('correct_count', 0))
+            total = int(data.get('total') if data.get('total') is not None else data.get('solved_count', 0))
             errors = int(data.get('errors', 0))
             stars = int(data.get('stars', 0))
 
@@ -780,6 +780,19 @@ def handle_web_app_data(message):
             c_stats['total_stars'] += stars
 
             save_daily_stats(stats)
+
+            # 3. Отправка поздравления и статистики пользователю
+            try:
+                text = (
+                    f"🎉 Поздравляем с завершением тренировки, {child_name}!\n\n"
+                    f"📊 Твои результаты:\n"
+                    f"• Всего решено примеров: {total}\n"
+                    f"• Из них правильно: {correct}\n"
+                    f"⭐ Заработано звезд: {stars}"
+                )
+                bot.send_message(message.chat.id, text)
+            except Exception as send_err:
+                print(f"Ошибка при отправке поздравления: {send_err}")
     except Exception as e:
         print(f"Error handling web_app_data: {e}")
 
