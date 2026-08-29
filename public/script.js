@@ -1231,9 +1231,9 @@
                 if (currentRuleType === 'sub_ten') {
                     const { toTen, remain } = currentProblem.splitHelp;
 
-                    battery1Card.className = "relative w-12 h-28 border-2 border-orange-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
+                    battery1Card.className = "relative w-12 h-28 border-2 border-orange-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
                     battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-orange-500/50 rounded-t-sm";
-                    battery2Card.className = "relative w-12 h-28 border-2 border-rose-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
+                    battery2Card.className = "relative w-12 h-28 border-2 border-rose-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
                     battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-rose-500/50 rounded-t-sm";
 
                     label1.textContent = 'Спускаемся до 10';
@@ -1250,9 +1250,9 @@
                     updateBatterySegments('.battery-segment', 10);
                     updateBatterySegments('.battery-segment-2', toTen);
                 } else {
-                    battery1Card.className = "relative w-12 h-28 border-2 border-indigo-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
+                    battery1Card.className = "relative w-12 h-28 border-2 border-indigo-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
                     battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-indigo-500/50 rounded-t-sm";
-                    battery2Card.className = "relative w-12 h-28 border-2 border-emerald-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
+                    battery2Card.className = "relative w-12 h-28 border-2 border-emerald-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
                     battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-emerald-500/50 rounded-t-sm";
 
                     label1.textContent = 'Собираем 10';
