@@ -1106,13 +1106,14 @@
             const segments = document.querySelectorAll(selector);
             const numValue = Math.max(0, parseInt(value, 10) || 0);
             const activeCount = Math.min(numValue, 10);
+            const startIndex = 10 - activeCount;
             const prefix = selector.startsWith('.') ? selector.slice(1) : selector;
             
             const activeClass = customActiveColor || "bg-emerald-400 shadow-[0_0_8px_#34d399]";
             const inactiveClass = "bg-slate-800/40";
 
             segments.forEach((seg, index) => {
-                if (index < activeCount) {
+                if (index >= startIndex) {
                     seg.className = `${prefix} w-full h-2 rounded-[1px] ${activeClass} transition-all duration-300`;
                 } else {
                     seg.className = `${prefix} w-full h-2 rounded-[1px] ${inactiveClass} transition-all duration-300`;

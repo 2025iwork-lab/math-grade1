@@ -21,13 +21,13 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="app-version" content="2.1">
+    <meta name="app-version" content="2.2">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Telegram Web App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js?v=2.1"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=2.2"></script>
 
     <script>
         tailwind.config = {
@@ -5106,13 +5106,14 @@
             const segments = document.querySelectorAll(selector);
             const numValue = Math.max(0, parseInt(value, 10) || 0);
             const activeCount = Math.min(numValue, 10);
+            const startIndex = 10 - activeCount;
             const prefix = selector.startsWith('.') ? selector.slice(1) : selector;
             
             const activeClass = customActiveColor || "bg-emerald-400 shadow-[0_0_8px_#34d399]";
             const inactiveClass = "bg-slate-800/40";
 
             segments.forEach((seg, index) => {
-                if (index < activeCount) {
+                if (index >= startIndex) {
                     seg.className = `${prefix} w-full h-2 rounded-[1px] ${activeClass} transition-all duration-300`;
                 } else {
                     seg.className = `${prefix} w-full h-2 rounded-[1px] ${inactiveClass} transition-all duration-300`;
