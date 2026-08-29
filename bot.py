@@ -3,6 +3,7 @@ import json
 import time
 import datetime
 import threading
+import socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.request
 import telebot
@@ -709,10 +710,16 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
+class ReuseAddressServer(HTTPServer):
+    allow_reuse_address = True
+
 def run_server():
-    port = int(os.environ.get('PORT', 10000))
-    server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
-    server.serve_forever()
+    try:
+        port = int(os.environ.get('PORT', 10000))
+        server = ReuseAddressServer(('0.0.0.0', port), HealthCheckHandler)
+        server.serve_forever()
+    except Exception as e:
+        print(f"[Server Error]: {e}", flush=True)
 
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
@@ -1105,7 +1112,7 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
 def run_keep_alive_server():
     try:
         port = int(os.environ.get("PORT", 8080))
-        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+        server = ReuseAddressServer(("0.0.0.0", port), HealthCheckHandler)
         server.serve_forever()
     except Exception as e:
         print(f"[Keep-Alive Server Error]: {e}", flush=True)
@@ -1131,6 +1138,11 @@ if __name__ == '__main__':
     threading.Thread(target=daily_digest_scheduler, daemon=True).start()
     threading.Thread(target=run_keep_alive_server, daemon=True).start()
     threading.Thread(target=run_self_ping, daemon=True).start()
+    try:
+        bot.remove_webhook()
+        time.sleep(1)
+    except Exception:
+        pass
     bot.infinity_polling(skip_pending=True)
 
 
