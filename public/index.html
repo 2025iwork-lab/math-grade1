@@ -2215,9 +2215,9 @@
                 </div>
             </div>
 
-            <!-- Кнопка «Забрать награды 🚀» -->
+            <!-- Кнопка «Забрать награду ⭐» -->
             <button id="triumph-claim-btn" class="triumph-claim-btn">
-                Забрать награды 🚀
+                Забрать награду ⭐
             </button>
         </div>
     </div>
@@ -2488,6 +2488,7 @@
         let sessionSolved = 0;
         let sessionHintsUsed = 0;
         const DAILY_SESSIONS_GOAL = 2;
+        let pendingTelegramReport = null;
 
         function getTodayKey() {
             const d = new Date();
@@ -6212,26 +6213,23 @@
                 console.warn('Triumph media error:', e);
             }
 
-            // Отправка отчёта в Telegram WebApp
+            // Сохранение подготовленного отчёта для Telegram WebApp во временную переменную
             try {
-                if (window.Telegram?.WebApp) {
-                    const totalQuestionsCount = typeof SESSION_TOTAL !== 'undefined' ? SESSION_TOTAL : 25;
-                    const errorsCount = typeof sessionErrors !== 'undefined' ? sessionErrors : 0;
-                    const correctAnswersCount = Math.max(0, totalQuestionsCount - errorsCount);
-                    const earnedStarsCount = typeof sessionCoinsEarned !== 'undefined' ? sessionCoinsEarned : 0;
+                const totalQuestionsCount = typeof SESSION_TOTAL !== 'undefined' ? SESSION_TOTAL : 25;
+                const errorsCount = typeof sessionErrors !== 'undefined' ? sessionErrors : 0;
+                const correctAnswersCount = Math.max(0, totalQuestionsCount - errorsCount);
+                const earnedStarsCount = typeof sessionCoinsEarned !== 'undefined' ? sessionCoinsEarned : 0;
 
-                    const report = {
-                        type: 'session_complete',
-                        correct: correctAnswersCount || 0,
-                        total: totalQuestionsCount || 0,
-                        errors: errorsCount || 0,
-                        stars: earnedStarsCount || 0,
-                        timestamp: Date.now()
-                    };
-                    window.Telegram.WebApp.sendData(JSON.stringify(report));
-                }
+                pendingTelegramReport = {
+                    type: 'session_complete',
+                    correct: correctAnswersCount || 0,
+                    total: totalQuestionsCount || 0,
+                    errors: errorsCount || 0,
+                    stars: earnedStarsCount || 0,
+                    timestamp: Date.now()
+                };
             } catch (e) {
-                console.warn('Telegram WebApp sendData error:', e);
+                console.warn('Telegram report preparation error:', e);
             }
         }
 
@@ -6428,6 +6426,17 @@
                         sessionSolved = 0; // Сброс счетчика решенных примеров при забрании наград
                         updateCoinsAndStreak();
                         showScreen('screen-topics');
+
+                        // Отправка отчёта в Telegram WebApp при клике по кнопке "Забрать награду ⭐"
+                        if (pendingTelegramReport && window.Telegram?.WebApp) {
+                            try {
+                                const reportToSend = pendingTelegramReport;
+                                pendingTelegramReport = null;
+                                window.Telegram.WebApp.sendData(JSON.stringify(reportToSend));
+                            } catch (e) {
+                                console.warn('Telegram WebApp sendData error:', e);
+                            }
+                        }
                     }
                 }
             ];
