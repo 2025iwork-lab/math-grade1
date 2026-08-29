@@ -5093,16 +5093,28 @@
         }
 
         // --- ЛОГИКА БАТАРЕЙ (Подсказки) ---
-        function resetBatteries() {
-            const segments1 = document.querySelectorAll('.battery-segment');
-            const segments2 = document.querySelectorAll('.battery-segment-2');
+        function updateBatterySegments(selector, value, customActiveColor) {
+            const segments = document.querySelectorAll(selector);
+            const numValue = Math.max(0, parseInt(value, 10) || 0);
+            const activeCount = Math.min(numValue, 10);
+            const prefix = selector.startsWith('.') ? selector.slice(1) : selector;
+            
+            const activeClass = customActiveColor || "bg-emerald-400 shadow-[0_0_8px_#34d399]";
+            const inactiveClass = "bg-slate-800/40";
 
-            segments1.forEach(s => {
-                s.className = "battery-segment w-full h-2 rounded-[1px] bg-slate-800/40 transition-all duration-300";
+            segments.forEach(seg => {
+                const idx = parseInt(seg.getAttribute('data-index'), 10);
+                if (idx < activeCount) {
+                    seg.className = `${prefix} w-full h-2 rounded-[1px] ${activeClass} transition-all duration-300`;
+                } else {
+                    seg.className = `${prefix} w-full h-2 rounded-[1px] ${inactiveClass} transition-all duration-300`;
+                }
             });
-            segments2.forEach(s => {
-                s.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-slate-800/40 transition-all duration-300";
-            });
+        }
+
+        function resetBatteries() {
+            updateBatterySegments('.battery-segment', 0);
+            updateBatterySegments('.battery-segment-2', 0);
 
             const battery1TextEl = document.getElementById('battery-1-text');
             const battery2TextEl = document.getElementById('battery-2-text');
@@ -5427,21 +5439,8 @@
                     </div>
                 `;
 
-                const fillA = Math.min(Math.max(0, valA), 10);
-                const fillB = Math.min(Math.max(0, valB), 10);
-
-                for (let i = 0; i < fillA; i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-sky-400 shadow-[0_0_8px_#38bdf8] transition-all duration-300";
-                    }, i * 50);
-                }
-                for (let i = 0; i < fillB; i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment-2[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#34d399] transition-all duration-300";
-                    }, i * 50);
-                }
+                updateBatterySegments('.battery-segment', valA);
+                updateBatterySegments('.battery-segment-2', valB);
                 return;
             }
 
@@ -5486,22 +5485,8 @@
                     `;
                 }
 
-                // Закрашиваем ОДНУ 10-сегментную батарейку:
-                // Первые xVal сегментов -> Синий (🔵)
-                for (let i = 0; i < Math.min(xVal, 10); i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-sky-400 shadow-[0_0_8px_#38bdf8] transition-all duration-300";
-                    }, i * 40);
-                }
-                // Оставшиеся (10 - xVal) сегментов -> Зеленый (🟢)
-                for (let i = 0; i < Math.min(remainVal, 10 - xVal); i++) {
-                    const idx = xVal + i;
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${idx}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#34d399] transition-all duration-300";
-                    }, (xVal + i) * 40);
-                }
+                // Ровно 10 из 10 активных делений для Десятка
+                updateBatterySegments('.battery-segment', 10);
                 return;
             }
 
@@ -5565,19 +5550,11 @@
                     }
                 }
 
-                // Анимация батареек: Левая = 10 делений (зеленый), Правая = unitVal делений (желтый)
-                for (let i = 0; i < 10; i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#34d399] transition-all duration-300";
-                    }, i * 40);
-                }
-                for (let i = 0; i < Math.min(unitVal, 10); i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment-2[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-amber-400 shadow-[0_0_8px_#fbbf24] transition-all duration-300";
-                    }, (10 + i) * 40);
-                }
+                // Строгий расчет: 10 для Десятка (10/10), unitVal для Единиц (unitVal/10)
+                const val1 = operator === '+' ? 10 : a;
+                const val2 = operator === '+' ? unitVal : b;
+                updateBatterySegments('.battery-segment', val1);
+                updateBatterySegments('.battery-segment-2', val2);
                 return;
             }
 
@@ -5640,34 +5617,10 @@
                     </div>
                 `;
 
-                // Левая батарейка: закрашиваем целые 10 делений (зеленым)
-                for (let i = 0; i < 10; i++) {
-                    const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                    if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#34d399] transition-all duration-300";
-                }
-                // Правая батарейка: ровно столько делений, сколько единиц в числе (для 11 - 1 деление)
-                for (let i = 0; i < Math.min(toTen, 10); i++) {
-                    const seg = document.querySelector(`.battery-segment-2[data-index="${i}"]`);
-                    if (seg) seg.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-amber-400 shadow-[0_0_8px_#fbbf24] transition-all duration-300";
-                }
-
-                // Шаг 1: Анимируем "опустошение" единиц на Правой шкале (доходим до 10)
-                for (let i = 0; i < Math.min(toTen, 10); i++) {
-                    const drainIdx = toTen - 1 - i;
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment-2[data-index="${drainIdx}"]`);
-                        if (seg) seg.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-amber-500/20 border border-amber-400/40 opacity-40 scale-90 transition-all duration-300";
-                    }, (i + 1) * 120);
-                }
-
-                // Шаг 2: Анимируем "опустошение" остатка вычитания на Левой шкале (отнимаем от 10)
-                for (let i = 0; i < Math.min(remain, 10); i++) {
-                    const drainIdx = 9 - i;
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${drainIdx}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-emerald-500/20 border border-emerald-400/40 opacity-40 scale-90 transition-all duration-300";
-                    }, (toTen + i + 1) * 120);
-                }
+                // Левая батарейка: ровно 10 из 10 активных зеленых полосок для Десятка (10).
+                // Правая батарейка: ровно toTen из 10 активных зеленых полосок для Единиц (toTen).
+                updateBatterySegments('.battery-segment', 10);
+                updateBatterySegments('.battery-segment-2', toTen);
                 return;
             }
 
@@ -5706,28 +5659,9 @@
                     </div>
                 `;
 
-                // Подсвечиваем first ячеек голубым на Шкале 1
-                for (let i = 0; i < Math.min(first, 10); i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-sky-400 shadow-[0_0_8px_#38bdf8] transition-all duration-300";
-                    }, i * 40);
-                }
-                // Дополняем до 10 зелеными ячейками на Шкале 1
-                for (let i = 0; i < Math.min(toTen, 10 - first); i++) {
-                    setTimeout(() => {
-                        const idx = first + i;
-                        const seg = document.querySelector(`.battery-segment[data-index="${idx}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#344399] transition-all duration-300";
-                    }, (first + i) * 40);
-                }
-                // Заполняем remain ячеек зеленым на Шкале 2
-                for (let i = 0; i < Math.min(remain, 10); i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment-2[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#34d399] transition-all duration-300";
-                    }, (10 + i) * 40);
-                }
+                // Батарея 1 (10): ровно 10 из 10 активных зеленых полосок. Батарея 2 (remain): remain из 10 активных зеленых полосок.
+                updateBatterySegments('.battery-segment', 10);
+                updateBatterySegments('.battery-segment-2', remain);
                 return;
             }
 
@@ -5752,26 +5686,8 @@
                     </div>
                 `;
 
-                const totalA = Math.min(Math.max(0, a), 10);
-                const subB = Math.min(Math.max(0, b), totalA);
-
-                // Шаг 1: Сначала подсвечиваем 'a' ячеек голубым
-                for (let i = 0; i < totalA; i++) {
-                    const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                    if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-sky-400 shadow-[0_0_8px_#38bdf8] transition-all duration-300";
-                }
-
-                // Шаг 2: Пошагово анимируем "опустошение/уменьшение" верхних 'b' ячеек
-                for (let i = 0; i < subB; i++) {
-                    const drainIdx = totalA - 1 - i;
-                    setTimeout(() => {
-                        const seg1 = document.querySelector(`.battery-segment[data-index="${drainIdx}"]`);
-                        if (seg1) seg1.className = "battery-segment w-full h-2 rounded-[1px] bg-rose-500/25 border border-rose-400/60 opacity-40 scale-90 shadow-[0_0_4px_rgba(244,63,94,0.3)] transition-all duration-300";
-
-                        const seg2 = document.querySelector(`.battery-segment-2[data-index="${i}"]`);
-                        if (seg2) seg2.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-rose-500/30 border border-rose-400/50 opacity-60 transition-all duration-300";
-                    }, (i + 1) * 120);
-                }
+                updateBatterySegments('.battery-segment', a);
+                updateBatterySegments('.battery-segment-2', b);
             } else {
                 battery1Card.className = "relative w-12 h-28 border-2 border-sky-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col-reverse gap-0.5 justify-start overflow-hidden";
                 battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-sky-500/50 rounded-t-sm";
@@ -5788,21 +5704,8 @@
                     Пример: <span class="text-sky-400 font-bold">${a}</span> + <span class="text-emerald-400 font-bold">${b}</span> = <span class="text-indigo-400 font-bold">${answer}</span>
                 `;
 
-                const fillA = Math.min(Math.max(0, a), 10);
-                const fillB = Math.min(Math.max(0, b), 10);
-
-                for (let i = 0; i < fillA; i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment w-full h-2 rounded-[1px] bg-sky-400 shadow-[0_0_8px_#38bdf8] transition-all duration-300";
-                    }, i * 50);
-                }
-                for (let i = 0; i < fillB; i++) {
-                    setTimeout(() => {
-                        const seg = document.querySelector(`.battery-segment-2[data-index="${i}"]`);
-                        if (seg) seg.className = "battery-segment-2 w-full h-2 rounded-[1px] bg-emerald-400 shadow-[0_0_8px_#34d399] transition-all duration-300";
-                    }, i * 50);
-                }
+                updateBatterySegments('.battery-segment', a);
+                updateBatterySegments('.battery-segment-2', b);
             }
         }
 
