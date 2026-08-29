@@ -4,6 +4,7 @@ import time
 import datetime
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import urllib.request
 import telebot
 from telebot import types
 
@@ -1091,6 +1092,36 @@ def admin_command(message):
     except Exception as e:
         print(f"Error handling /admin command: {e}")
 
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        return  # Блокируем захламление логов
+
+def run_keep_alive_server():
+    try:
+        port = int(os.environ.get("PORT", 8080))
+        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+        server.serve_forever()
+    except Exception as e:
+        print(f"[Keep-Alive Server Error]: {e}", flush=True)
+
+def run_self_ping():
+    time.sleep(20)  # Даем сервису время запуститься
+    url = "https://math-bot-tlzz.onrender.com"
+    while True:
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'KeepAlive-Ping'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                pass
+        except Exception as e:
+            pass  # Изолируем ошибки сети, чтобы поток не падал
+        time.sleep(600)  # Пинг каждые 10 минут
+
 if __name__ == '__main__':
     print(f"[DB INFO] Initializing DB... URL present: {bool(os.getenv('DATABASE_URL'))}")
     setup_bot_commands()
@@ -1098,5 +1129,8 @@ if __name__ == '__main__':
         migrate_json_to_db()
     threading.Thread(target=run_server, daemon=True).start()
     threading.Thread(target=daily_digest_scheduler, daemon=True).start()
+    threading.Thread(target=run_keep_alive_server, daemon=True).start()
+    threading.Thread(target=run_self_ping, daemon=True).start()
     bot.infinity_polling(skip_pending=True)
+
 
