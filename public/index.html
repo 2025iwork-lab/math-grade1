@@ -21,13 +21,15 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="app-version" content="2.3">
+    <meta name="app-version" content="2.4">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Telegram Web App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js?v=2.3"></script>
+    <!-- Telegram Web App SDK & Local Scripts -->
+    <script src="https://telegram.org/js/telegram-web-app.js?v=2.4"></script>
+    <script src="script.js?v=2.4"></script>
+    <script src="app.js?v=2.4"></script>
 
     <script>
         tailwind.config = {
@@ -5103,17 +5105,18 @@
 
         // --- ЛОГИКА БАТАРЕЙ (Подсказки) ---
         function updateBatterySegments(selector, value, customActiveColor) {
-            const segments = document.querySelectorAll(selector);
+            let segments = document.querySelectorAll(selector);
+            if (!segments || segments.length === 0) {
+                segments = document.querySelectorAll(selector + ' .battery-segment, ' + selector + ' .battery-segment-2, ' + selector + ' .segment');
+            }
             const numValue = Math.max(0, parseInt(value, 10) || 0);
-            const activeCount = Math.min(numValue, 10);
-            const startIndex = 10 - activeCount;
-            const prefix = selector.startsWith('.') ? selector.slice(1) : selector;
-            
+            const count = Math.min(numValue, 10);
             const activeClass = customActiveColor || "bg-emerald-400 shadow-[0_0_8px_#34d399]";
             const inactiveClass = "bg-slate-800/40";
 
-            segments.forEach((seg, index) => {
-                if (index >= startIndex) {
+            segments.forEach((seg, i) => {
+                const prefix = seg.classList.contains('battery-segment-2') ? 'battery-segment-2' : (seg.classList.contains('segment') ? 'segment' : 'battery-segment');
+                if (i >= (10 - count)) {
                     seg.className = `${prefix} w-full h-2 rounded-[1px] ${activeClass} transition-all duration-300`;
                 } else {
                     seg.className = `${prefix} w-full h-2 rounded-[1px] ${inactiveClass} transition-all duration-300`;
