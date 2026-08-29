@@ -699,28 +699,6 @@ def daily_digest_scheduler():
         except Exception as e:
             print(f"Error in daily_digest_scheduler: {e}")
             time.sleep(30)
-
-class HealthCheckHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write(b'Bot is running!')
-
-    def log_message(self, format, *args):
-        return
-
-class ReuseAddressServer(HTTPServer):
-    allow_reuse_address = True
-
-def run_server():
-    try:
-        port = int(os.environ.get('PORT', 10000))
-        server = ReuseAddressServer(('0.0.0.0', port), HealthCheckHandler)
-        server.serve_forever()
-    except Exception as e:
-        print(f"[Server Error]: {e}", flush=True)
-
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
     try:
@@ -1109,13 +1087,19 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return  # Блокируем захламление логов
 
+class ReuseAddressServer(HTTPServer):
+    allow_reuse_address = True
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        super().server_bind()
+
 def run_keep_alive_server():
+    port = int(os.environ.get("PORT", 8080))
     try:
-        port = int(os.environ.get("PORT", 8080))
         server = ReuseAddressServer(("0.0.0.0", port), HealthCheckHandler)
         server.serve_forever()
-    except Exception as e:
-        print(f"[Keep-Alive Server Error]: {e}", flush=True)
+    except OSError:
+        pass  # Порт уже удерживается родительским процессом Render
 
 def run_self_ping():
     time.sleep(20)  # Даем сервису время запуститься
@@ -1134,7 +1118,6 @@ if __name__ == '__main__':
     setup_bot_commands()
     if init_db():
         migrate_json_to_db()
-    threading.Thread(target=run_server, daemon=True).start()
     threading.Thread(target=daily_digest_scheduler, daemon=True).start()
     threading.Thread(target=run_keep_alive_server, daemon=True).start()
     threading.Thread(target=run_self_ping, daemon=True).start()
