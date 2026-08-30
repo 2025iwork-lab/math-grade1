@@ -5130,6 +5130,25 @@
             }
         }
 
+        function renderSimpleAdditionSticks(firstNum, secondNum, showFullSum) {
+            const container = document.getElementById('sticks-container');
+            if (!container) return;
+            container.innerHTML = ''; // Очистка контейнера
+            
+            // Если showFullSum = false, показываем только первое число. Если true — оба.
+            const totalToShow = showFullSum ? (firstNum + secondNum) : firstNum;
+
+            for (let i = 0; i < totalToShow; i++) {
+                const stick = document.createElement('div');
+                if (i < firstNum) {
+                    stick.className = 'w-2 h-10 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] transition-all duration-300';
+                } else {
+                    stick.className = 'w-2 h-10 rounded-full bg-fuchsia-400 shadow-[0_0_8px_#e879f9] transition-all duration-300';
+                }
+                container.appendChild(stick);
+            }
+        }
+
         function resetBatteries() {
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
@@ -5543,7 +5562,16 @@
                             <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
                         </div>
                     `;
-                    renderSticks(total, 0);
+                    // Сначала первое слагаемое (голубые палочки)
+                    renderSimpleAdditionSticks(a, b, false);
+
+                    // Показываем оба слагаемых через 800 мс
+                    hintStepTimer1 = setTimeout(() => {
+                        renderSimpleAdditionSticks(a, b, true);
+                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                        }
+                    }, 800);
                 } else {
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
