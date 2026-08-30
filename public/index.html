@@ -28,8 +28,8 @@
 
     <!-- Telegram Web App SDK & Local Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js?v=2.9"></script>
-    <script src="script.js?v=5.1"></script>
-    <script src="app.js?v=5.1"></script>
+    <script src="script.js?v=5.3"></script>
+    <script src="app.js?v=5.3"></script>
 
     <script>
         tailwind.config = {
@@ -5299,17 +5299,19 @@
                 const { type, x, correctAnswer } = currentProblem || {};
                 const qStr = String(currentProblem ? currentProblem.question : '');
                 const ans = correctAnswer !== undefined ? correctAnswer : 0;
-                const a = currentProblem ? currentProblem.a : 0;
-                const b = currentProblem ? currentProblem.b : 0;
-                const op = currentProblem ? (currentProblem.operator || '+') : '+';
+
+                const matches = qStr.match(/\d+/g) || [];
+                const firstNum = (currentProblem && currentProblem.a !== undefined) ? currentProblem.a : (matches[0] ? parseInt(matches[0], 10) : 0);
+                const secondNum = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : 0);
+                const op = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
 
                 const hasDm = qStr.includes('дм');
 
-                if (!hasDm && (qStr.includes('+') || qStr.includes('-') || (a > 0 && b > 0))) {
+                if (!hasDm && (qStr.includes('+') || qStr.includes('-') || (firstNum > 0 && secondNum > 0))) {
                     // Если пример изначально был только в сантиметрах (например, 10 см - 2 см)
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${a} ${op} ${b} = ${ans} см</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${firstNum} ${op} ${secondNum} = ${ans} см</div>
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
                         </div>
                     `;
