@@ -5307,14 +5307,30 @@
 
                 const hasDm = qStr.includes('дм');
 
-                if (!hasDm && (qStr.includes('+') || qStr.includes('-') || (firstNum > 0 && secondNum > 0))) {
-                    // Если пример изначально был только в сантиметрах (например, 10 см - 2 см)
-                    batteryHintFormula.innerHTML = `
-                        <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${firstNum} ${op} ${secondNum} = ${ans} см</div>
-                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
-                        </div>
-                    `;
+                if (qStr.includes('+') || qStr.includes('-') || (firstNum > 0 && secondNum > 0)) {
+                    if (hasDm) {
+                        // Если в примере был дециметр (например, 1 дм - 2 см)
+                        const dmMatch = qStr.match(/(\d+)\s*дм/);
+                        const dmVal = dmMatch ? parseInt(dmMatch[1], 10) : 1;
+                        const firstInCm = dmVal * 10;
+                        const cmMatch = qStr.match(/(\d+)\s*см/);
+                        const secCm = cmMatch ? parseInt(cmMatch[1], 10) : secondNum;
+
+                        batteryHintFormula.innerHTML = `
+                            <div class="flex flex-col items-center gap-1 font-sans text-center">
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: ${firstInCm} ${op} ${secCm} = ${ans}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
+                            </div>
+                        `;
+                    } else {
+                        // Простые примеры только с сантиметрами (например, 10 см - 2 см)
+                        batteryHintFormula.innerHTML = `
+                            <div class="flex flex-col items-center gap-1 font-sans text-center">
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${firstNum} ${op} ${secondNum} = ${ans}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
+                            </div>
+                        `;
+                    }
                     return;
                 }
 
