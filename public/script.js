@@ -701,7 +701,7 @@
                             };
                         }
                     } else if (type === 'quantities') {
-                        const option = Math.floor(Math.random() * 3);
+                        const option = Math.floor(Math.random() * 4);
                         if (option === 0) {
                             const dm = Math.floor(Math.random() * 2) + 1;
                             const correctAnswer = dm * 10;
@@ -722,7 +722,7 @@
                                 type: 'to_cm_mixed',
                                 x
                             };
-                        } else {
+                        } else if (option === 2) {
                             const dm = Math.floor(Math.random() * 2) + 1;
                             const cm = dm * 10;
                             return {
@@ -732,6 +732,14 @@
                                 type: 'to_dm',
                                 cm
                             };
+                        } else {
+                            const isAdd = Math.random() < 0.5;
+                            const b = Math.floor(Math.random() * 8) + 1;
+                            if (isAdd) {
+                                return { a: 10, b: b, operator: '+', question: `1 дм + ${b} см = ? см`, correctAnswer: 10 + b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                            } else {
+                                return { a: 10, b: b, operator: '-', question: `1 дм - ${b} см = ? см`, correctAnswer: 10 - b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                            }
                         }
                     }
                 }

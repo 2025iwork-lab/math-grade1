@@ -28,8 +28,8 @@
 
     <!-- Telegram Web App SDK & Local Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js?v=2.9"></script>
-    <script src="script.js?v=5.3"></script>
-    <script src="app.js?v=5.3"></script>
+    <script src="script.js?v=5.5"></script>
+    <script src="app.js?v=5.5"></script>
 
     <script>
         tailwind.config = {
@@ -4363,15 +4363,27 @@
                                 const item = options[Math.floor(Math.random() * options.length)];
                                 return { question: `${item.labelA} ... ${item.labelB}`, correctAnswer: item.ans, isComparison: true };
                             } else {
-                                const isAdd = Math.random() < 0.5;
-                                if (isAdd) {
-                                    const a = Math.floor(Math.random() * 8) + 1;
-                                    const b = Math.floor(Math.random() * 8) + 1;
-                                    return { question: `${a} см + ${b} см = ? см`, correctAnswer: a + b, unit: 'см' };
+                                const isDmAddSub = Math.random() < 0.4;
+                                if (isDmAddSub) {
+                                    const isAdd = Math.random() < 0.5;
+                                    if (isAdd) {
+                                        const b = Math.floor(Math.random() * 8) + 1;
+                                        return { a: 10, b: b, operator: '+', question: `1 дм + ${b} см = ? см`, correctAnswer: 10 + b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                                    } else {
+                                        const b = Math.floor(Math.random() * 8) + 1;
+                                        return { a: 10, b: b, operator: '-', question: `1 дм - ${b} см = ? см`, correctAnswer: 10 - b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                                    }
                                 } else {
-                                    const a = Math.floor(Math.random() * 10) + 6;
-                                    const b = Math.floor(Math.random() * 5) + 1;
-                                    return { question: `${a} см - ${b} см = ? см`, correctAnswer: a - b, unit: 'см' };
+                                    const isAdd = Math.random() < 0.5;
+                                    if (isAdd) {
+                                        const a = Math.floor(Math.random() * 8) + 1;
+                                        const b = Math.floor(Math.random() * 8) + 1;
+                                        return { a: a, b: b, operator: '+', question: `${a} см + ${b} см = ? см`, correctAnswer: a + b, unit: 'см', firstUnit: 'см', secondUnit: 'см' };
+                                    } else {
+                                        const a = Math.floor(Math.random() * 10) + 6;
+                                        const b = Math.floor(Math.random() * 5) + 1;
+                                        return { a: a, b: b, operator: '-', question: `${a} см - ${b} см = ? см`, correctAnswer: a - b, unit: 'см', firstUnit: 'см', secondUnit: 'см' };
+                                    }
                                 }
                             }
                         }
