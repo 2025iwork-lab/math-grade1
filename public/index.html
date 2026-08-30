@@ -28,8 +28,8 @@
 
     <!-- Telegram Web App SDK & Local Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js?v=2.9"></script>
-    <script src="script.js?v=6.7"></script>
-    <script src="app.js?v=6.7"></script>
+    <script src="script.js?v=6.9"></script>
+    <script src="app.js?v=6.9"></script>
 
     <script>
         tailwind.config = {
@@ -4363,7 +4363,7 @@
                                 const item = options[Math.floor(Math.random() * options.length)];
                                 return { question: `${item.labelA} ... ${item.labelB}`, correctAnswer: item.ans, isComparison: true };
                             } else {
-                                const useDm = Math.random() < 0.5;
+                                const useDm = true; // ПРИНУДИТЕЛЬНО 100% ДЛЯ ТЕСТИРОВАНИЯ
                                 if (useDm) {
                                     const isAdd = Math.random() < 0.5;
                                     if (isAdd) {
