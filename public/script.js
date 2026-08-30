@@ -733,7 +733,7 @@
                                 cm
                             };
                         } else {
-                            const useDmCalculation = true; // ПРИНУДИТЕЛЬНО 100% ДЛЯ ТЕСТИРОВАНИЯ
+                            const useDmCalculation = Math.random() < 0.5;
                             if (useDmCalculation) {
                                 const isAdd = Math.random() < 0.5;
                                 const b = Math.floor(Math.random() * 8) + 1;
