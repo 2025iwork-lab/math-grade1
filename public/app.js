@@ -1314,12 +1314,28 @@
                 const { type, x, correctAnswer } = currentProblem || {};
                 const qStr = String(currentProblem ? currentProblem.question : '');
                 const ans = correctAnswer !== undefined ? correctAnswer : 0;
+                const a = currentProblem ? currentProblem.a : 0;
+                const b = currentProblem ? currentProblem.b : 0;
+                const op = currentProblem ? (currentProblem.operator || '+') : '+';
+
+                const hasDm = qStr.includes('дм');
+
+                if (!hasDm && (qStr.includes('+') || qStr.includes('-') || (a > 0 && b > 0))) {
+                    // Если пример изначально был только в сантиметрах (например, 10 см - 2 см)
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${a} ${op} ${b} = ${ans} см</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
+                        </div>
+                    `;
+                    return;
+                }
 
                 if (type === 'to_cm_simple') {
                     const dmVal = Math.floor(ans / 10) || 1;
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см</div>
                             <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${dmVal} дм = ${ans} см</div>
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
                         </div>
@@ -1334,13 +1350,23 @@
                         const dmVal = Math.floor(totalCm / 10) || 1;
                         const cmVal = totalCm % 10;
 
-                        batteryHintFormula.innerHTML = `
-                            <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
-                                <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${totalCm} см — это ${dmVal * 10} см (${dmVal} дм) и ${cmVal} см.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
-                            </div>
-                        `;
+                        if (cmVal === 0) {
+                            batteryHintFormula.innerHTML = `
+                                <div class="flex flex-col items-center gap-1 font-sans text-center">
+                                    <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см</div>
+                                    <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${totalCm} см = ${dmVal} дм</div>
+                                    <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
+                                </div>
+                            `;
+                        } else {
+                            batteryHintFormula.innerHTML = `
+                                <div class="flex flex-col items-center gap-1 font-sans text-center">
+                                    <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см</div>
+                                    <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${totalCm} см — это ${dmVal * 10} см (${dmVal} дм) и ${cmVal} см.</div>
+                                    <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
+                                </div>
+                            `;
+                        }
                     } else {
                         const mixMatch = qStr.match(/(\d+)\s*дм\s*(\d+)\s*см/);
                         const dmVal = mixMatch ? parseInt(mixMatch[1], 10) : 1;
@@ -1350,7 +1376,7 @@
 
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см</div>
                                 <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${dmVal} дм — это ${dmInCm} см, да еще ${cmVal} см.</div>
                                 <div class="text-emerald-400 font-extrabold text-xs sm:text-sm">Значит, ${dmInCm} + ${cmVal} = ${totalCm} см.</div>
                                 <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${totalCm}</div>
@@ -1361,20 +1387,16 @@
                     const totalCm = ans * 10;
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см</div>
                             <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${totalCm} см = ${ans} дм</div>
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
                         </div>
                     `;
                 } else {
-                    const a = currentProblem ? currentProblem.a : 0;
-                    const b = currentProblem ? currentProblem.b : 0;
-                    const op = currentProblem ? (currentProblem.operator || '+') : '+';
                     const unit = currentProblem ? (currentProblem.unit || 'см') : 'см';
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем величины:</div>
-                            <div class="text-sky-400 font-black text-sm sm:text-base">${a} ${op} ${b} = ${ans} ${unit}</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${a} ${op} ${b} = ${ans} ${unit}</div>
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
                         </div>
                     `;
