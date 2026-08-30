@@ -1101,33 +1101,43 @@
             }
         }
 
-        // --- ЛОГИКА БАТАРЕЙ (Подсказки) ---
-        function updateBatterySegments(selector, value, customActiveColor) {
-            let segments = document.querySelectorAll(selector);
-            if (!segments || segments.length === 0) {
-                segments = document.querySelectorAll(selector + ' .battery-segment, ' + selector + ' .battery-segment-2, ' + selector + ' .segment');
-            }
-            const numValue = Math.max(0, parseInt(value, 10) || 0);
-            const count = Math.min(numValue, 10);
-            const activeClass = customActiveColor || "bg-emerald-400 shadow-[0_0_8px_#34d399]";
-            const inactiveClass = "bg-slate-800/40";
+        // --- ЛОГИКА ДЕСЯТИЧНЫХ РАМОК (TEN-FRAMES 2x5) ---
+        let hintStepTimer = null;
 
-            segments.forEach((seg, i) => {
-                const prefix = seg.classList.contains('battery-segment-2') ? 'battery-segment-2' : (seg.classList.contains('segment') ? 'segment' : 'battery-segment');
-                if (i >= (10 - count)) {
-                    seg.className = `${prefix} w-full h-2 rounded-[1px] ${activeClass} transition-all duration-300`;
-                } else {
-                    seg.className = `${prefix} w-full h-2 rounded-[1px] ${inactiveClass} transition-all duration-300`;
+        /*
+        function updateBatterySegments(selector, value, customActiveColor) { ... }
+        */
+
+        function renderTenFrame(containerId, count) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            const validCount = Math.max(0, Math.min(10, parseInt(count, 10) || 0));
+
+            for (let i = 0; i < 10; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'w-7 h-7 rounded-full border-2 border-slate-700 bg-slate-900 flex items-center justify-center relative';
+
+                if (i < validCount) {
+                    const crystal = document.createElement('div');
+                    crystal.className = 'w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 absolute crystal-glow transition-all duration-300 scale-100';
+                    slot.appendChild(crystal);
                 }
-            });
+
+                container.appendChild(slot);
+            }
         }
 
         function resetBatteries() {
-            updateBatterySegments('.battery-segment', 0);
-            updateBatterySegments('.battery-segment-2', 0);
+            if (hintStepTimer) {
+                clearTimeout(hintStepTimer);
+                hintStepTimer = null;
+            }
+            renderTenFrame('frame-tens', 0);
+            renderTenFrame('frame-ones', 0);
 
-            if (battery1Text) battery1Text.textContent = "0";
-            if (battery2Text) battery2Text.textContent = "0";
+            if (typeof battery1Text !== 'undefined' && battery1Text) battery1Text.textContent = "0";
+            if (typeof battery2Text !== 'undefined' && battery2Text) battery2Text.textContent = "0";
         }
 
         function showHint() {
@@ -1147,34 +1157,27 @@
         function fillBatteries() {
             resetBatteries();
 
-            const battery1Card = document.getElementById('battery-1-card');
-            const battery1Cap = document.getElementById('battery-1-cap');
-            const battery2Card = document.getElementById('battery-2-card');
-            const battery2Cap = document.getElementById('battery-2-cap');
-            const label1 = document.getElementById('battery-1-label');
-            const label2 = document.getElementById('battery-2-label');
-
-            // Скрываем заголовок подсказки в режимах без батареек
-            if (currentRuleType === 'tens' || currentRuleType === 'word_problems' || currentRuleType === 'quantities') {
-                hintTitle.classList.add('hidden');
-            } else {
-                hintTitle.classList.remove('hidden');
-            }
-
+            const labelTens = document.getElementById('frame-tens-label');
+            const labelOnes = document.getElementById('frame-ones-label');
+            const frameTensWrapper = document.getElementById('frame-tens-wrapper');
+            const frameOnesWrapper = document.getElementById('frame-ones-wrapper');
             const batteriesVisual = document.getElementById('batteries-visual');
+            const hintTitle = document.getElementById('hint-title');
+
+            if (currentRuleType === 'tens' || currentRuleType === 'word_problems' || currentRuleType === 'quantities' || currentRuleType === 'up_to_10' || currentRuleType === 'comparison') {
+                if (hintTitle) hintTitle.classList.add('hidden');
+            } else {
+                if (hintTitle) hintTitle.classList.remove('hidden');
+            }
 
             if (currentRuleType === 'word_problems') {
                 if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
                 const { formula, type } = currentProblem;
                 if (type === 'word_add') {
-                    batteryHintFormula.innerHTML = `
-            Находим общее количество: <span class="text-emerald-400 font-bold">${formula}</span>
-          `;
+                    batteryHintFormula.innerHTML = `Находим общее количество: <span class="text-emerald-400 font-bold">${formula}</span>`;
                 } else {
-                    batteryHintFormula.innerHTML = `
-            Находим остаток: <span class="text-rose-400 font-bold">${formula}</span>
-          `;
+                    batteryHintFormula.innerHTML = `Находим остаток: <span class="text-rose-400 font-bold">${formula}</span>`;
                 }
                 return;
             }
@@ -1184,19 +1187,12 @@
 
                 const { type } = currentProblem;
                 if (type === 'to_cm_simple') {
-                    batteryHintFormula.innerHTML = `
-            Вспомни правило: <span class="text-indigo-400 font-bold">1 дм = 10 см</span>.
-          `;
+                    batteryHintFormula.innerHTML = `Вспомни правило: <span class="text-indigo-400 font-bold">1 дм = 10 см</span>.`;
                 } else if (type === 'to_cm_mixed') {
                     const { x, correctAnswer } = currentProblem;
-                    batteryHintFormula.innerHTML = `
-            Вспомни правило: <span class="text-indigo-400 font-bold">1 дм = 10 см</span>.<br>
-            Значит, <span class="text-emerald-400 font-bold">10 + ${x} = ${correctAnswer}</span>.
-          `;
+                    batteryHintFormula.innerHTML = `Вспомни правило: <span class="text-indigo-400 font-bold">1 дм = 10 см</span>.<br>Значит, <span class="text-emerald-400 font-bold">10 + ${x} = ${correctAnswer}</span>.`;
                 } else {
-                    batteryHintFormula.innerHTML = `
-            Вспомни правило: <span class="text-indigo-400 font-bold">10 см = 1 дм</span>.
-          `;
+                    batteryHintFormula.innerHTML = `Вспомни правило: <span class="text-indigo-400 font-bold">10 см = 1 дм</span>.`;
                 }
                 return;
             }
@@ -1226,63 +1222,73 @@
             Шаг 2: Возвращаем ноль на место ➔ <span class="text-rose-400 font-bold">${diffTens * 10}</span>
           `;
                 }
-            } else {
-                if (batteriesVisual) batteriesVisual.classList.remove('hidden');
-
-                if (currentRuleType === 'sub_ten') {
-                    const { toTen, remain } = currentProblem.splitHelp;
-
-                    battery1Card.className = "relative w-12 h-28 border-2 border-orange-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
-                    battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-orange-500/50 rounded-t-sm";
-                    battery2Card.className = "relative w-12 h-28 border-2 border-rose-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
-                    battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-rose-500/50 rounded-t-sm";
-
-                    label1.textContent = 'Спускаемся до 10';
-                    label2.textContent = 'Осталось отнять';
-
-                    battery1Text.textContent = `${firstTerm} - ${toTen}`;
-                    battery2Text.textContent = `${remain}`;
-
-                    batteryHintFormula.innerHTML = `
-              Шаг 1: Спускаемся до 10 ➔ <span class="text-orange-400 font-bold">${firstTerm} - ${toTen} = 10</span><br>
-              Шаг 2: Отнимаем остаток ➔ <span class="text-rose-400 font-bold">10 - ${remain} = ${10 - remain}</span>
-            `;
-
-                    updateBatterySegments('.battery-segment', 10);
-                    updateBatterySegments('.battery-segment-2', toTen);
-                } else {
-                    battery1Card.className = "relative w-12 h-28 border-2 border-indigo-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
-                    battery1Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-indigo-500/50 rounded-t-sm";
-                    battery2Card.className = "relative w-12 h-28 border-2 border-emerald-500/50 rounded-xl p-0.5 bg-slate-950/90 flex flex-col gap-0.5 justify-start overflow-hidden";
-                    battery2Cap.className = "absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-2 bg-emerald-500/50 rounded-t-sm";
-
-                    label1.textContent = 'Собираем 10';
-                    label2.textContent = 'Осталось';
-
-                    if (currentRuleType === 'over_ten') {
-                        const { toTen, remain } = currentProblem.splitHelp;
-
-                        battery1Text.textContent = `${firstTerm} + ${toTen}`;
-                        battery2Text.textContent = `${remain}`;
-                        batteryHintFormula.innerHTML = `
-              Шаг 1: Сначала соберем 10 ➔ <span class="text-sky-400 font-bold">${firstTerm} + ${toTen} = 10</span><br>
-              Шаг 2: А теперь добавим остаток ➔ <span class="text-emerald-400 font-bold">10 + ${remain} = ${10 + remain}</span>
-            `;
-
-                        updateBatterySegments('.battery-segment', 10);
-                        updateBatterySegments('.battery-segment-2', remain);
-                    } else {
-                        battery1Text.textContent = `${firstTerm} + ${secondTerm}`;
-                        battery2Text.textContent = `0`;
-                        batteryHintFormula.innerHTML = `
-              Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>
-            `;
-
-                        updateBatterySegments('.battery-segment', firstTerm);
-                        updateBatterySegments('.battery-segment-2', secondTerm);
-                    }
-                }
+                return;
             }
+
+            if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+
+            if (currentRuleType === 'sub_ten') {
+                const { toTen, remain } = currentProblem.splitHelp;
+
+                if (labelTens) labelTens.textContent = 'Десяток (10)';
+                if (labelOnes) labelOnes.textContent = `Единицы (${toTen})`;
+
+                batteryHintFormula.innerHTML = `
+          Шаг 1: Спускаемся до 10 ➔ <span class="text-orange-400 font-bold">${firstTerm} - ${toTen} = 10</span><br>
+          Шаг 2: Отнимаем остаток ➔ <span class="text-rose-400 font-bold">10 - ${remain} = ${10 - remain}</span>
+        `;
+
+                renderTenFrame('frame-tens', 10);
+                renderTenFrame('frame-ones', toTen);
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                }
+
+                hintStepTimer = setTimeout(() => {
+                    renderTenFrame('frame-ones', 0);
+                    renderTenFrame('frame-tens', 10 - remain);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 750);
+            } else if (currentRuleType === 'over_ten') {
+                const { toTen, remain } = currentProblem.splitHelp;
+
+                if (labelTens) labelTens.textContent = `Первое (${firstTerm})`;
+                if (labelOnes) labelOnes.textContent = `Второе (${secondTerm})`;
+
+                batteryHintFormula.innerHTML = `
+          Шаг 1: Сначала соберем 10 ➔ <span class="text-sky-400 font-bold">${firstTerm} + ${toTen} = 10</span><br>
+          Шаг 2: А теперь добавим остаток ➔ <span class="text-emerald-400 font-bold">10 + ${remain} = ${10 + remain}</span>
+        `;
+
+                renderTenFrame('frame-tens', firstTerm);
+                renderTenFrame('frame-ones', secondTerm);
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                }
+
+                hintStepTimer = setTimeout(() => {
+                    if (labelTens) labelTens.textContent = 'Десяток (10)';
+                    if (labelOnes) labelOnes.textContent = `Остаток (${remain})`;
+                    renderTenFrame('frame-tens', 10);
+                    renderTenFrame('frame-ones', remain);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 750);
+            } else {
+                if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
+                if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
+                if (labelTens) labelTens.textContent = 'Десяток (10)';
+
+                batteryHintFormula.innerHTML = `
+          Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>
+        `;
+
+                renderTenFrame('frame-tens', 10);
+            }
+        }
         }
 
         // --- ОБРАБОТЧИКИ НАЖАТИЙ (Numpad) ---
