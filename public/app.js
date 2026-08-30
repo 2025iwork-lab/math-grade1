@@ -733,12 +733,26 @@
                                 cm
                             };
                         } else {
-                            const isAdd = Math.random() < 0.5;
-                            const b = Math.floor(Math.random() * 8) + 1;
-                            if (isAdd) {
-                                return { a: 10, b: b, operator: '+', question: `1 дм + ${b} см = ? см`, correctAnswer: 10 + b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                            const useDmCalculation = Math.random() < 0.5;
+                            if (useDmCalculation) {
+                                const isAdd = Math.random() < 0.5;
+                                const b = Math.floor(Math.random() * 8) + 1;
+                                if (isAdd) {
+                                    return { a: 10, b: b, operator: '+', question: `1 дм + ${b} см = ? см`, correctAnswer: 10 + b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                                } else {
+                                    return { a: 10, b: b, operator: '-', question: `1 дм - ${b} см = ? см`, correctAnswer: 10 - b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                                }
                             } else {
-                                return { a: 10, b: b, operator: '-', question: `1 дм - ${b} см = ? см`, correctAnswer: 10 - b, unit: 'см', firstUnit: 'дм', secondUnit: 'см' };
+                                const isAdd = Math.random() < 0.5;
+                                if (isAdd) {
+                                    const a = Math.floor(Math.random() * 8) + 1;
+                                    const b = Math.floor(Math.random() * 8) + 1;
+                                    return { a: a, b: b, operator: '+', question: `${a} см + ${b} см = ? см`, correctAnswer: a + b, unit: 'см', firstUnit: 'см', secondUnit: 'см' };
+                                } else {
+                                    const a = Math.floor(Math.random() * 10) + 6;
+                                    const b = Math.floor(Math.random() * 5) + 1;
+                                    return { a: a, b: b, operator: '-', question: `${a} см - ${b} см = ? см`, correctAnswer: a - b, unit: 'см', firstUnit: 'см', secondUnit: 'см' };
+                                }
                             }
                         }
                     }
