@@ -5149,6 +5149,29 @@
             }
         }
 
+        function renderNumbersTo20Subtraction(firstNum, secondNum) {
+            const container = document.getElementById('sticks-container');
+            if (!container) return;
+            container.innerHTML = ''; // Очистка контейнера
+            
+            for (let i = 0; i < firstNum; i++) {
+                const stick = document.createElement('div');
+                
+                // Зачеркиваем палочки с конца (вычитаемое)
+                if (i >= firstNum - secondNum) {
+                    stick.className = 'w-2 h-10 rounded-full bg-slate-500 opacity-80 relative transition-all duration-300';
+                    const cross = document.createElement('div');
+                    cross.className = 'absolute top-1/2 left-1/2 w-6 h-0.5 bg-red-500 -translate-x-1/2 -translate-y-1/2 rotate-45 shadow-[0_0_5px_red]';
+                    stick.appendChild(cross);
+                } else {
+                    // Оставшиеся целые палочки
+                    stick.className = 'w-2 h-10 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] transition-all duration-300';
+                }
+                
+                container.appendChild(stick);
+            }
+        }
+
         function resetBatteries() {
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
@@ -5579,7 +5602,7 @@
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
                         </div>
                     `;
-                    renderSticks(a, b);
+                    renderNumbersTo20Subtraction(a, b);
                 }
                 return;
             }
