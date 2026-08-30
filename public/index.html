@@ -28,8 +28,8 @@
 
     <!-- Telegram Web App SDK & Local Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js?v=2.9"></script>
-    <script src="script.js?v=2.9"></script>
-    <script src="app.js?v=2.9"></script>
+    <script src="script.js?v=5.1"></script>
+    <script src="app.js?v=5.1"></script>
 
     <script>
         tailwind.config = {
@@ -5578,10 +5578,9 @@
                 const total = answer || (a + b);
 
                 if (operator === '+') {
-                    const onesSum = (a % 10) + (b % 10);
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и ${onesSum} единиц (${onesSum}) образуют ${total}.</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">К ${a} прибавляем ${b}.</div>
                             <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
                         </div>
                     `;
