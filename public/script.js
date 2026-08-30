@@ -1570,9 +1570,10 @@
                 const total = answer || (a + b);
 
                 if (operator === '+') {
+                    const onesSum = (a % 10) + (b % 10);
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и остаток образуют ${total}.</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и ${onesSum} единиц (${onesSum}) образуют ${total}.</div>
                             <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
                         </div>
                     `;
