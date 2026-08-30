@@ -1102,7 +1102,8 @@
         }
 
         // --- ЛОГИКА ДЕСЯТИЧНЫХ РАМОК (TEN-FRAMES 2x5) ---
-        let hintStepTimer = null;
+        let hintStepTimer1 = null;
+        let hintStepTimer2 = null;
 
         /*
         function updateBatterySegments(selector, value, customActiveColor) { ... }
@@ -1129,10 +1130,9 @@
         }
 
         function resetBatteries() {
-            if (hintStepTimer) {
-                clearTimeout(hintStepTimer);
-                hintStepTimer = null;
-            }
+            if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
+            if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
+
             renderTenFrame('frame-tens', 0);
             renderTenFrame('frame-ones', 0);
 
@@ -1229,6 +1229,7 @@
 
             if (currentRuleType === 'sub_ten') {
                 const { toTen, remain } = currentProblem.splitHelp;
+                const finalResult = 10 - remain;
 
                 if (labelTens) labelTens.textContent = 'Десяток (10)';
                 if (labelOnes) labelOnes.textContent = `Единицы (${toTen})`;
@@ -1238,19 +1239,27 @@
           Шаг 2: Отнимаем остаток ➔ <span class="text-rose-400 font-bold">10 - ${remain} = ${10 - remain}</span>
         `;
 
+                // ШАГ 0: Показываем уменьшаемое
                 renderTenFrame('frame-tens', 10);
                 renderTenFrame('frame-ones', toTen);
-                if (window.Telegram?.WebApp?.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                }
 
-                hintStepTimer = setTimeout(() => {
+                // ШАГ 1: Гасим единицы справа
+                hintStepTimer1 = setTimeout(() => {
+                    if (labelOnes) labelOnes.textContent = 'Единицы (0)';
                     renderTenFrame('frame-ones', 0);
-                    renderTenFrame('frame-tens', 10 - remain);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
-                }, 750);
+                }, 800);
+
+                // ШАГ 2: Гасим остаток в левой рамке
+                hintStepTimer2 = setTimeout(() => {
+                    if (labelTens) labelTens.textContent = `Остаток (${finalResult})`;
+                    renderTenFrame('frame-tens', finalResult);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 1600);
             } else if (currentRuleType === 'over_ten') {
                 const { toTen, remain } = currentProblem.splitHelp;
 
@@ -1262,13 +1271,12 @@
           Шаг 2: А теперь добавим остаток ➔ <span class="text-emerald-400 font-bold">10 + ${remain} = ${10 + remain}</span>
         `;
 
+                // ШАГ 0: Исходные слагаемые
                 renderTenFrame('frame-tens', firstTerm);
                 renderTenFrame('frame-ones', secondTerm);
-                if (window.Telegram?.WebApp?.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                }
 
-                hintStepTimer = setTimeout(() => {
+                // ШАГ 1: Дополнить слева до 10
+                hintStepTimer1 = setTimeout(() => {
                     if (labelTens) labelTens.textContent = 'Десяток (10)';
                     if (labelOnes) labelOnes.textContent = `Остаток (${remain})`;
                     renderTenFrame('frame-tens', 10);
@@ -1276,17 +1284,53 @@
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
-                }, 750);
+                }, 800);
             } else {
-                if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
-                if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
-                if (labelTens) labelTens.textContent = 'Десяток (10)';
+                // Состав 10 или Числа до 20
+                const isSub = isSubtraction;
+                const xVal = isSub ? secondTerm : firstTerm;
+                const remainVal = Math.max(0, 10 - xVal);
 
-                batteryHintFormula.innerHTML = `
-          Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>
-        `;
+                if (firstTerm >= 10 || secondTerm >= 10) {
+                    // Числа до 20
+                    const rawUnit = firstTerm === 10 ? secondTerm : (secondTerm === 10 ? firstTerm : (firstTerm % 10 || secondTerm % 10));
+                    const unitDigit = Math.abs(rawUnit) % 10;
+                    if (labelTens) labelTens.textContent = 'Десяток (10)';
+                    if (labelOnes) labelOnes.textContent = `Единицы (${unitDigit})`;
 
-                renderTenFrame('frame-tens', 10);
+                    renderTenFrame('frame-tens', 10);
+                    renderTenFrame('frame-ones', unitDigit);
+                } else if (isSub) {
+                    if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
+                    if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
+                    if (labelTens) labelTens.textContent = 'Было (10)';
+
+                    batteryHintFormula.innerHTML = `Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>`;
+
+                    renderTenFrame('frame-tens', 10);
+                    hintStepTimer1 = setTimeout(() => {
+                        if (labelTens) labelTens.textContent = `Осталось (${remainVal})`;
+                        renderTenFrame('frame-tens', remainVal);
+                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                        }
+                    }, 800);
+                } else {
+                    if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
+                    if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
+                    if (labelTens) labelTens.textContent = `Было (${firstTerm})`;
+
+                    batteryHintFormula.innerHTML = `Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>`;
+
+                    renderTenFrame('frame-tens', firstTerm);
+                    hintStepTimer1 = setTimeout(() => {
+                        if (labelTens) labelTens.textContent = 'Десяток (10)';
+                        renderTenFrame('frame-tens', 10);
+                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                        }
+                    }, 800);
+                }
             }
         }
         }

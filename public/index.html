@@ -21,15 +21,15 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="app-version" content="2.8">
+    <meta name="app-version" content="2.9">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Telegram Web App SDK & Local Scripts -->
-    <script src="https://telegram.org/js/telegram-web-app.js?v=2.8"></script>
-    <script src="script.js?v=2.8"></script>
-    <script src="app.js?v=2.8"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=2.9"></script>
+    <script src="script.js?v=2.9"></script>
+    <script src="app.js?v=2.9"></script>
 
     <script>
         tailwind.config = {
@@ -5097,7 +5097,8 @@
         }
 
         // --- ЛОГИКА ДЕСЯТИЧНЫХ РАМОК (TEN-FRAMES 2x5) ---
-        let hintStepTimer = null;
+        let hintStepTimer1 = null;
+        let hintStepTimer2 = null;
 
         /* 
         // Старая функция отрисовки батареек закомментирована по требованию безопасности
@@ -5125,10 +5126,8 @@
         }
 
         function resetBatteries() {
-            if (hintStepTimer) {
-                clearTimeout(hintStepTimer);
-                hintStepTimer = null;
-            }
+            if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
+            if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
             renderTenFrame('frame-tens', 0);
             renderTenFrame('frame-ones', 0);
 
@@ -5499,7 +5498,6 @@
 
                 if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
                 if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
-                if (labelTens) labelTens.textContent = 'Десяток (10)';
 
                 const xVal = operator === '-' ? b : a;
                 const remainVal = Math.max(0, 10 - xVal);
