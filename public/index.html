@@ -28,8 +28,8 @@
 
     <!-- Telegram Web App SDK & Local Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js?v=2.9"></script>
-    <script src="script.js?v=6.0"></script>
-    <script src="app.js?v=6.0"></script>
+    <script src="script.js?v=6.3"></script>
+    <script src="app.js?v=6.3"></script>
 
     <script>
         tailwind.config = {
@@ -5317,29 +5317,26 @@
                 const secondNum = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : 0);
                 const op = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
 
-                const hasDm = qStr.includes('дм');
-
-                if (qStr.includes('+') || qStr.includes('-') || (firstNum > 0 && secondNum > 0)) {
-                    if (hasDm) {
-                        // Если в примере был дециметр (например, 1 дм - 2 см)
-                        const dmMatch = qStr.match(/(\d+)\s*дм/);
-                        const dmVal = dmMatch ? parseInt(dmMatch[1], 10) : 1;
-                        const firstInCm = dmVal * 10;
-                        const cmMatch = qStr.match(/(\d+)\s*см/);
-                        const secCm = cmMatch ? parseInt(cmMatch[1], 10) : secondNum;
-
+                if (currentProblem && (currentProblem.operator || qStr.includes('+') || qStr.includes('-'))) {
+                    if ((currentProblem && currentProblem.firstUnit === 'дм') || qStr.includes('дм')) {
+                        const opStr = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
+                        const bVal = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : (matches[0] ? parseInt(matches[0], 10) : 0));
+                        const ansVal = (currentProblem && currentProblem.correctAnswer !== undefined) ? currentProblem.correctAnswer : ans;
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: ${firstInCm} ${op} ${secCm} = ${ans}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: 10 ${opStr} ${bVal} = ${ansVal}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
                             </div>
                         `;
                     } else {
-                        // Простые примеры только с сантиметрами (например, 10 см - 2 см)
+                        const aVal = (currentProblem && currentProblem.a !== undefined) ? currentProblem.a : (matches[0] ? parseInt(matches[0], 10) : 0);
+                        const bVal = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : 0);
+                        const opStr = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
+                        const ansVal = (currentProblem && currentProblem.correctAnswer !== undefined) ? currentProblem.correctAnswer : ans;
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${firstNum} ${op} ${secondNum} = ${ans}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans} см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${aVal} ${opStr} ${bVal} = ${ansVal}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
                             </div>
                         `;
                     }
