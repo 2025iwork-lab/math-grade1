@@ -1105,27 +1105,24 @@
         let hintStepTimer1 = null;
         let hintStepTimer2 = null;
 
-        function renderSticks(containerIdOrEl, total, crossedOutCount = 0, secondaryCount = 0) {
-            const container = typeof containerIdOrEl === 'string' ? document.getElementById(containerIdOrEl) : containerIdOrEl;
+        function renderSticks(total, crossedOutCount = 0) {
+            const container = document.getElementById('sticks-container');
             if (!container) return;
-            container.innerHTML = '';
-
-            const validTotal = Math.max(0, parseInt(total, 10) || 0);
-            const validCrossed = Math.max(0, parseInt(crossedOutCount, 10) || 0);
-            const validSecondary = Math.max(0, parseInt(secondaryCount, 10) || 0);
-            const primaryCount = Math.max(0, validTotal - validSecondary);
-
-            for (let i = 0; i < validTotal; i++) {
+            container.innerHTML = ''; // Жесткая очистка от любого мусора
+            
+            for (let i = 0; i < total; i++) {
                 const stick = document.createElement('div');
-                const isSecondary = i >= primaryCount;
-                const colorClass = isSecondary ? 'stick-emerald' : 'stick-cyan';
-
-                stick.className = `stick ${colorClass}`;
-
-                if (i >= (validTotal - validCrossed)) {
-                    stick.classList.add('stick-crossed');
+                // Зачеркиваем с конца
+                if (i >= total - crossedOutCount) {
+                    // Зачеркнутая палочка
+                    stick.className = 'w-2 h-10 rounded-full bg-slate-700 opacity-60 relative transition-all duration-300';
+                    const cross = document.createElement('div');
+                    cross.className = 'absolute top-1/2 left-1/2 w-6 h-0.5 bg-red-500 -translate-x-1/2 -translate-y-1/2 rotate-45 shadow-[0_0_5px_red]';
+                    stick.appendChild(cross);
+                } else {
+                    // Активная палочка
+                    stick.className = 'w-2 h-10 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] transition-all duration-300';
                 }
-
                 container.appendChild(stick);
             }
         }
@@ -1134,7 +1131,7 @@
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
 
-            renderSticks('sticks-container', 0, 0, 0);
+            renderSticks(0, 0);
 
             if (typeof battery1Text !== 'undefined' && battery1Text) battery1Text.textContent = "0";
             if (typeof battery2Text !== 'undefined' && battery2Text) battery2Text.textContent = "0";
@@ -1499,11 +1496,11 @@
                     `;
 
                     // ШАГ 0: 10 палочек
-                    renderSticks('sticks-container', 10, 0);
+                    renderSticks(10, 0);
 
                     // ШАГ 1: Зачеркнуть xVal палочек
                     hintStepTimer1 = setTimeout(() => {
-                        renderSticks('sticks-container', 10, xVal);
+                        renderSticks(10, xVal);
                         if (window.Telegram?.WebApp?.HapticFeedback) {
                             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                         }
@@ -1518,7 +1515,7 @@
                         </div>
                     `;
 
-                    renderSticks('sticks-container', 10, 0, remainVal);
+                    renderSticks(10, 0);
                 }
                 return;
             }
@@ -1530,14 +1527,13 @@
                 const total = answer || (a + b);
 
                 if (operator === '+') {
-                    const sec = a === 10 ? b : a;
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и ${sec} единиц (${sec}) образуют ${total}.</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и остаток образуют ${total}.</div>
                             <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
                         </div>
                     `;
-                    renderSticks('sticks-container', total, 0, sec);
+                    renderSticks(total, 0);
                 } else {
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
@@ -1545,7 +1541,7 @@
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
                         </div>
                     `;
-                    renderSticks('sticks-container', a, b, 0);
+                    renderSticks(a, b);
                 }
                 return;
             }
@@ -1566,11 +1562,6 @@
                     </div>
                 `;
 
-                // ШАГ 0 (при открытии): renderSticks(container, a, 0)
-                renderSticks('sticks-container', a, 0);
-
-                // ШАГ 1 (отнимаем до 10): renderSticks(container, a, toTen)
-                hintStepTimer1 = setTimeout(() => {
                     renderSticks('sticks-container', a, toTen);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');

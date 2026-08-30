@@ -2012,29 +2012,13 @@
                         <span id="unit-display" class="text-indigo-600 font-sans font-extrabold hidden ml-1 sm:ml-2 shrink-0 whitespace-nowrap">см</span>
                     </div>
 
-                    <!-- Зона подсказки с десятичными рамками (Ten-Frames 2x5) -->
+                    <!-- Зона подсказки со счетными палочками -->
                     <div id="batteries-container"
                         class="hidden w-full p-3 rounded-2xl bg-indigo-950/50 border border-indigo-400/30 flex-col items-center gap-2 transition-all duration-300">
                         <div id="hint-title" class="text-[11px] text-indigo-400 font-bold tracking-wider uppercase">
                             Подсказка 💡
                         </div>
-                        <div id="batteries-visual" class="flex justify-around items-center w-full gap-2 sm:gap-4 my-1">
-                            <!-- Левая рамка (Десяток) -->
-                            <div id="frame-tens-wrapper" class="flex flex-col items-center gap-1 w-1/2">
-                                <div id="frame-tens-label" class="text-[11px] font-extrabold text-sky-300 text-center tracking-tight">Десяток (10)</div>
-                                <div id="frame-tens" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-800 rounded-xl border border-slate-700 shadow-inner"></div>
-                                <div id="battery-1-text" class="text-xs font-bold text-sky-400 hidden">10</div>
-                                <div id="battery-1-label" class="hidden">Собираем 10</div>
-                            </div>
-
-                            <!-- Правая рамка (Единицы) -->
-                            <div id="frame-ones-wrapper" class="flex flex-col items-center gap-1 w-1/2">
-                                <div id="frame-ones-label" class="text-[11px] font-extrabold text-emerald-300 text-center tracking-tight">Единицы (N)</div>
-                                <div id="frame-ones" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-800 rounded-xl border border-slate-700 shadow-inner"></div>
-                                <div id="battery-2-text" class="text-xs font-bold text-emerald-400 hidden">0</div>
-                                <div id="battery-2-label" class="hidden">Осталось</div>
-                            </div>
-                        </div>
+                        <div id="sticks-container" class="flex flex-wrap justify-center gap-2 p-4 w-full min-h-[60px]"></div>
                         <!-- Интерактивная формула подсказки -->
                         <div class="text-[11px] text-slate-300 mt-0.5 px-2.5 py-1 bg-slate-950/60 rounded-xl text-center font-mono w-full leading-normal border border-indigo-500/10 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]"
                             id="battery-hint-formula">
@@ -5100,27 +5084,24 @@
         let hintStepTimer1 = null;
         let hintStepTimer2 = null;
 
-        function renderSticks(containerIdOrEl, total, crossedOutCount = 0, secondaryCount = 0) {
-            const container = typeof containerIdOrEl === 'string' ? document.getElementById(containerIdOrEl) : containerIdOrEl;
+        function renderSticks(total, crossedOutCount = 0) {
+            const container = document.getElementById('sticks-container');
             if (!container) return;
-            container.innerHTML = '';
-
-            const validTotal = Math.max(0, parseInt(total, 10) || 0);
-            const validCrossed = Math.max(0, parseInt(crossedOutCount, 10) || 0);
-            const validSecondary = Math.max(0, parseInt(secondaryCount, 10) || 0);
-            const primaryCount = Math.max(0, validTotal - validSecondary);
-
-            for (let i = 0; i < validTotal; i++) {
+            container.innerHTML = ''; // Жесткая очистка от любого мусора
+            
+            for (let i = 0; i < total; i++) {
                 const stick = document.createElement('div');
-                const isSecondary = i >= primaryCount;
-                const colorClass = isSecondary ? 'stick-emerald' : 'stick-cyan';
-
-                stick.className = `stick ${colorClass}`;
-
-                if (i >= (validTotal - validCrossed)) {
-                    stick.classList.add('stick-crossed');
+                // Зачеркиваем с конца
+                if (i >= total - crossedOutCount) {
+                    // Зачеркнутая палочка
+                    stick.className = 'w-2 h-10 rounded-full bg-slate-700 opacity-60 relative transition-all duration-300';
+                    const cross = document.createElement('div');
+                    cross.className = 'absolute top-1/2 left-1/2 w-6 h-0.5 bg-red-500 -translate-x-1/2 -translate-y-1/2 rotate-45 shadow-[0_0_5px_red]';
+                    stick.appendChild(cross);
+                } else {
+                    // Активная палочка
+                    stick.className = 'w-2 h-10 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] transition-all duration-300';
                 }
-
                 container.appendChild(stick);
             }
         }
@@ -5129,7 +5110,7 @@
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
 
-            renderSticks('sticks-container', 0, 0, 0);
+            renderSticks(0, 0);
 
             const battery1TextEl = document.getElementById('battery-1-text');
             const battery2TextEl = document.getElementById('battery-2-text');
@@ -5500,11 +5481,11 @@
                     `;
 
                     // ШАГ 0: 10 палочек
-                    renderSticks('sticks-container', 10, 0);
+                    renderSticks(10, 0);
 
                     // ШАГ 1: Зачеркнуть xVal палочек
                     hintStepTimer1 = setTimeout(() => {
-                        renderSticks('sticks-container', 10, xVal);
+                        renderSticks(10, xVal);
                         if (window.Telegram?.WebApp?.HapticFeedback) {
                             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                         }
@@ -5519,7 +5500,7 @@
                         </div>
                     `;
 
-                    renderSticks('sticks-container', 10, 0, remainVal);
+                    renderSticks(10, 0);
                 }
                 return;
             }
@@ -5538,7 +5519,7 @@
                             <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
                         </div>
                     `;
-                    renderSticks('sticks-container', total, 0, sec);
+                    renderSticks(total, 0);
                 } else {
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
@@ -5546,7 +5527,7 @@
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
                         </div>
                     `;
-                    renderSticks('sticks-container', a, b, 0);
+                    renderSticks(a, b);
                 }
                 return;
             }
@@ -5567,20 +5548,20 @@
                     </div>
                 `;
 
-                // ШАГ 0 (при открытии): renderSticks(container, a, 0)
-                renderSticks('sticks-container', a, 0);
+                // ШАГ 0 (при открытии): renderSticks(a, 0)
+                renderSticks(a, 0);
 
-                // ШАГ 1 (отнимаем до 10): renderSticks(container, a, toTen)
+                // ШАГ 1 (отнимаем до 10): renderSticks(a, toTen)
                 hintStepTimer1 = setTimeout(() => {
-                    renderSticks('sticks-container', a, toTen);
+                    renderSticks(a, toTen);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
                 }, 800);
 
-                // ШАГ 2 (отнимаем остаток): renderSticks(container, a, b)
+                // ШАГ 2 (отнимаем остаток): renderSticks(a, b)
                 hintStepTimer2 = setTimeout(() => {
-                    renderSticks('sticks-container', a, b);
+                    renderSticks(a, b);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
@@ -5611,12 +5592,12 @@
                     </div>
                 `;
 
-                // ШАГ 0: Показываем first палочек цвет 1, second палочек цвет 2
-                renderSticks('sticks-container', first + second, 0, second);
+                // ШАГ 0: Показываем first + second палочек
+                renderSticks(first + second, 0);
 
                 // ШАГ 1: Показываем 10 + remain
                 hintStepTimer1 = setTimeout(() => {
-                    renderSticks('sticks-container', first + second, 0, remain);
+                    renderSticks(first + second, 0);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
