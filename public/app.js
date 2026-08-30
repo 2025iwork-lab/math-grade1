@@ -1101,31 +1101,32 @@
             }
         }
 
-        // --- ЛОГИКА ДЕСЯТИЧНЫХ РАМОК (TEN-FRAMES 2x5) ---
+        // --- ЛОГИКА СЧЕТНЫХ ПАЛОЧЕК (COUNTING STICKS) ---
         let hintStepTimer1 = null;
         let hintStepTimer2 = null;
 
-        /*
-        function updateBatterySegments(selector, value, customActiveColor) { ... }
-        */
-
-        function renderTenFrame(containerId, count) {
-            const container = document.getElementById(containerId);
+        function renderSticks(containerIdOrEl, total, crossedOutCount = 0, secondaryCount = 0) {
+            const container = typeof containerIdOrEl === 'string' ? document.getElementById(containerIdOrEl) : containerIdOrEl;
             if (!container) return;
             container.innerHTML = '';
-            const validCount = Math.max(0, Math.min(10, parseInt(count, 10) || 0));
 
-            for (let i = 0; i < 10; i++) {
-                const slot = document.createElement('div');
-                slot.className = 'w-7 h-7 rounded-full border-2 border-slate-700 bg-slate-900 flex items-center justify-center relative';
+            const validTotal = Math.max(0, parseInt(total, 10) || 0);
+            const validCrossed = Math.max(0, parseInt(crossedOutCount, 10) || 0);
+            const validSecondary = Math.max(0, parseInt(secondaryCount, 10) || 0);
+            const primaryCount = Math.max(0, validTotal - validSecondary);
 
-                if (i < validCount) {
-                    const crystal = document.createElement('div');
-                    crystal.className = 'w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 absolute crystal-glow transition-all duration-300 scale-100';
-                    slot.appendChild(crystal);
+            for (let i = 0; i < validTotal; i++) {
+                const stick = document.createElement('div');
+                const isSecondary = i >= primaryCount;
+                const colorClass = isSecondary ? 'stick-emerald' : 'stick-cyan';
+
+                stick.className = `stick ${colorClass}`;
+
+                if (i >= (validTotal - validCrossed)) {
+                    stick.classList.add('stick-crossed');
                 }
 
-                container.appendChild(slot);
+                container.appendChild(stick);
             }
         }
 
@@ -1133,204 +1134,493 @@
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
 
-            renderTenFrame('frame-tens', 0);
-            renderTenFrame('frame-ones', 0);
+            renderSticks('sticks-container', 0, 0, 0);
 
             if (typeof battery1Text !== 'undefined' && battery1Text) battery1Text.textContent = "0";
             if (typeof battery2Text !== 'undefined' && battery2Text) battery2Text.textContent = "0";
         }
 
         function showHint() {
-            playSound('click');
-            if (batteriesContainer.classList.contains('hidden')) {
-                batteriesContainer.classList.remove('hidden');
-                batteriesContainer.classList.add('flex');
-                document.body.classList.add('hint-open');
+            console.log('Лампочка нажата!');
+            try {
+                if (typeof playSound === 'function') playSound('click');
+                if (typeof haptic === 'function') haptic('light');
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                }
+            } catch (e) {}
+
+            try {
                 fillBatteries();
+            } catch (e) {
+                console.warn('Error filling hint:', e);
+            }
+
+            const hintContainer = document.getElementById('batteries-container') || 
+                                  document.getElementById('hint-container') || 
+                                  document.querySelector('.hint-block') ||
+                                  document.querySelector('.hint-container') ||
+                                  document.getElementById('batteries-visual');
+
+            if (hintContainer) {
+                const isCurrentlyHidden = hintContainer.classList.contains('hidden') || 
+                                          hintContainer.style.display === 'none' || 
+                                          getComputedStyle(hintContainer).display === 'none';
+
+                if (isCurrentlyHidden) {
+                    hintContainer.classList.remove('hidden');
+                    hintContainer.style.display = 'flex';
+                    hintContainer.style.visibility = 'visible';
+                    hintContainer.style.opacity = '1';
+                    document.body.classList.add('hint-open');
+                } else {
+                    hintContainer.classList.add('hidden');
+                    hintContainer.style.display = 'none';
+                    document.body.classList.remove('hint-open');
+                }
             } else {
-                batteriesContainer.classList.add('hidden');
-                batteriesContainer.classList.remove('flex');
-                document.body.classList.remove('hint-open');
+                console.error('Контейнер подсказки физически отсутствует в DOM!');
             }
         }
 
         function fillBatteries() {
             resetBatteries();
 
-            const labelTens = document.getElementById('frame-tens-label');
-            const labelOnes = document.getElementById('frame-ones-label');
-            const frameTensWrapper = document.getElementById('frame-tens-wrapper');
-            const frameOnesWrapper = document.getElementById('frame-ones-wrapper');
             const batteriesVisual = document.getElementById('batteries-visual');
             const hintTitle = document.getElementById('hint-title');
 
-            if (currentRuleType === 'tens' || currentRuleType === 'word_problems' || currentRuleType === 'quantities' || currentRuleType === 'up_to_10' || currentRuleType === 'comparison') {
+            const isWordProblem = currentRuleType === 'topic_6' || currentRuleType === 'word_problems' || (currentProblem && (currentProblem.type === 'word_add' || currentProblem.type === 'word_sub' || currentProblem.isWordProblem));
+            const isQuantityProblem = currentRuleType === 'topic_5' || currentRuleType === 'quantities' || currentRuleType === 'length_units' || (currentProblem && currentProblem.unit);
+            const isTensProblem = currentRuleType === 'tens' || currentRuleType === 'topic_9' || (currentProblem && currentProblem.a >= 10 && currentProblem.a % 10 === 0 && currentProblem.b >= 10 && currentProblem.b % 10 === 0);
+            const isComparison = currentRuleType === 'topic_1' || currentRuleType === 'comparison' || (currentProblem && currentProblem.isComparison);
+            const isUpTo10 = currentRuleType === 'topic_2' || currentRuleType === 'up_to_10';
+
+            // Скрываем заголовок подсказки в карточках без визуальных рамок
+            if (isTensProblem || isWordProblem || isQuantityProblem || isComparison || isUpTo10) {
                 if (hintTitle) hintTitle.classList.add('hidden');
             } else {
                 if (hintTitle) hintTitle.classList.remove('hidden');
             }
 
-            if (currentRuleType === 'word_problems') {
+            // 1. Текстовые задачи
+            if (isWordProblem) {
                 if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
-                const { formula, type } = currentProblem;
-                if (type === 'word_add') {
-                    batteryHintFormula.innerHTML = `Находим общее количество: <span class="text-emerald-400 font-bold">${formula}</span>`;
+                const a = currentProblem ? currentProblem.a : 0;
+                const b = currentProblem ? currentProblem.b : 0;
+                const operator = currentProblem ? (currentProblem.operator || (currentProblem.type === 'word_sub' ? '-' : '+')) : (currentProblem.type === 'word_sub' ? '-' : '+');
+                const answer = currentProblem ? currentProblem.correctAnswer : 0;
+
+                const isSub = operator === '-' || (currentProblem && currentProblem.type === 'word_sub');
+
+                if (isSub) {
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1.5 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Раз забрали, вычитаем:</div>
+                            <div class="text-rose-400 font-black text-base sm:text-lg tracking-wide">${a} - ${b} = <span class="text-amber-300 font-black">${answer}</span></div>
+                        </div>
+                    `;
                 } else {
-                    batteryHintFormula.innerHTML = `Находим остаток: <span class="text-rose-400 font-bold">${formula}</span>`;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1.5 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Раз положили ещё, складываем:</div>
+                            <div class="text-sky-400 font-black text-base sm:text-lg tracking-wide">${a} + ${b} = <span class="text-emerald-400 font-black">${answer}</span></div>
+                        </div>
+                    `;
                 }
                 return;
             }
 
-            if (currentRuleType === 'quantities') {
+            // 2. Единицы измерения (Сантиметры и дм)
+            if (isQuantityProblem) {
                 if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
-                const { type } = currentProblem;
+                if (currentProblem && currentProblem.isComparison) {
+                    const q = String(currentProblem.question || '');
+                    const ans = currentProblem.correctAnswer;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Сравниваем величины:</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${q}</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Нужен знак: ${ans}</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const { type, x, correctAnswer } = currentProblem || {};
+                const qStr = String(currentProblem ? currentProblem.question : '');
+                const ans = correctAnswer !== undefined ? correctAnswer : 0;
+
                 if (type === 'to_cm_simple') {
-                    batteryHintFormula.innerHTML = `Вспомни правило: <span class="text-indigo-400 font-bold">1 дм = 10 см</span>.`;
-                } else if (type === 'to_cm_mixed') {
-                    const { x, correctAnswer } = currentProblem;
-                    batteryHintFormula.innerHTML = `Вспомни правило: <span class="text-indigo-400 font-bold">1 дм = 10 см</span>.<br>Значит, <span class="text-emerald-400 font-bold">10 + ${x} = ${correctAnswer}</span>.`;
+                    const dmVal = Math.floor(ans / 10) || 1;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${dmVal} дм = ${ans} см</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
+                        </div>
+                    `;
+                } else if (type === 'to_cm_mixed' || qStr.includes('дм') || qStr.includes('см')) {
+                    const leftPart = qStr.split('=')[0] || qStr;
+                    const isTypeB = leftPart.includes('см') && !leftPart.includes('дм');
+
+                    if (isTypeB) {
+                        const cmMatch = qStr.match(/(\d+)\s*см/);
+                        const totalCm = cmMatch ? parseInt(cmMatch[1], 10) : (ans < 10 ? (10 + ans) : ans);
+                        const dmVal = Math.floor(totalCm / 10) || 1;
+                        const cmVal = totalCm % 10;
+
+                        batteryHintFormula.innerHTML = `
+                            <div class="flex flex-col items-center gap-1 font-sans text-center">
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                                <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${totalCm} см — это ${dmVal * 10} см (${dmVal} дм) и ${cmVal} см.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
+                            </div>
+                        `;
+                    } else {
+                        const mixMatch = qStr.match(/(\d+)\s*дм\s*(\d+)\s*см/);
+                        const dmVal = mixMatch ? parseInt(mixMatch[1], 10) : 1;
+                        const cmVal = mixMatch ? parseInt(mixMatch[2], 10) : (x !== undefined ? x : (ans % 10));
+                        const dmInCm = dmVal * 10;
+                        const totalCm = dmInCm + cmVal;
+
+                        batteryHintFormula.innerHTML = `
+                            <div class="flex flex-col items-center gap-1 font-sans text-center">
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                                <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${dmVal} дм — это ${dmInCm} см, да еще ${cmVal} см.</div>
+                                <div class="text-emerald-400 font-extrabold text-xs sm:text-sm">Значит, ${dmInCm} + ${cmVal} = ${totalCm} см.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${totalCm}</div>
+                            </div>
+                        `;
+                    }
+                } else if (type === 'to_dm_simple') {
+                    const totalCm = ans * 10;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Правило: 1 дм = 10 см</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">${totalCm} см = ${ans} дм</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
+                        </div>
+                    `;
                 } else {
-                    batteryHintFormula.innerHTML = `Вспомни правило: <span class="text-indigo-400 font-bold">10 см = 1 дм</span>.`;
+                    const a = currentProblem ? currentProblem.a : 0;
+                    const b = currentProblem ? currentProblem.b : 0;
+                    const op = currentProblem ? (currentProblem.operator || '+') : '+';
+                    const unit = currentProblem ? (currentProblem.unit || 'см') : 'см';
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем величины:</div>
+                            <div class="text-sky-400 font-black text-sm sm:text-base">${a} ${op} ${b} = ${ans} ${unit}</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ans}</div>
+                        </div>
+                    `;
                 }
                 return;
             }
 
-            const isSubtraction = currentProblem.question.includes('-');
-            const parts = currentProblem.question.split(isSubtraction ? '-' : '+').map(x => parseInt(x.trim()));
-            const firstTerm = parts[0];
-            const secondTerm = parts[1];
+            // 2.5. Примеры с тремя операндами
+            const qStr = String(currentProblem ? currentProblem.question : '');
+            const numMatches = qStr.match(/\d+/g);
+            const opMatches = qStr.match(/[+\-]/g);
 
-            if (currentRuleType === 'tens') {
+            if (!isWordProblem && !isQuantityProblem && !(currentProblem && currentProblem.isComparison) && numMatches && numMatches.length === 3 && opMatches && opMatches.length === 2) {
+                if (batteriesVisual) batteriesVisual.classList.add('hidden');
+                hintTitle.classList.add('hidden');
+
+                const n1 = parseInt(numMatches[0], 10);
+                const n2 = parseInt(numMatches[1], 10);
+                const n3 = parseInt(numMatches[2], 10);
+                const op1 = opMatches[0];
+                const op2 = opMatches[1];
+
+                const step1Result = op1 === '+' ? (n1 + n2) : (n1 - n2);
+                const finalResult = op2 === '+' ? (step1Result + n3) : (step1Result - n3);
+                const ans = (currentProblem && currentProblem.correctAnswer !== undefined) ? currentProblem.correctAnswer : finalResult;
+
+                const step1Text = op1 === '+' ? `${n1} + ${n2} = ${step1Result}` : `${n1} - ${n2} = ${step1Result}`;
+                const step1Color = op1 === '+' ? 'text-sky-400' : 'text-orange-400';
+
+                const step2Text = op2 === '+' ? `${step1Result} + ${n3} = ${ans}` : `${step1Result} - ${n3} = ${ans}`;
+                const step2Color = op2 === '+' ? 'text-emerald-400' : 'text-rose-400';
+
+                batteryHintFormula.innerHTML = `
+                    <div class="flex flex-col items-center gap-1 font-sans text-center">
+                        <div class="${step1Color} font-extrabold text-base sm:text-lg">${step1Text}</div>
+                        <div class="${step2Color} font-extrabold text-base sm:text-lg">${step2Text}</div>
+                        <div class="text-amber-300 font-black text-sm sm:text-base mt-0.5">Итог: ${n1} ${op1} ${n2} ${op2} ${n3} = ${ans}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // 3. Извлекаем параметры математического примера
+            let a = currentProblem ? currentProblem.a : undefined;
+            let operator = currentProblem ? currentProblem.operator : undefined;
+            let b = currentProblem ? currentProblem.b : undefined;
+            const answer = currentProblem ? currentProblem.correctAnswer : 0;
+
+            if (a === undefined || operator === undefined || b === undefined) {
+                const q = String(currentProblem ? currentProblem.question : '');
+                const isSub = q.includes('-');
+                operator = isSub ? '-' : '+';
+                const parts = q.split(operator).map(x => parseInt(x.trim(), 10));
+                a = isNaN(parts[0]) ? 0 : parts[0];
+                b = isNaN(parts[1]) ? 0 : parts[1];
+            }
+
+            // 4. Сравнение чисел (Запрещено менять визуализацию)
+            if (isComparison) {
                 if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
-                const isAdd = currentProblem.question.includes('+');
-                const aTens = firstTerm / 10;
-                const bTens = secondTerm / 10;
+                const qStr = String(currentProblem.question || '');
+                let rawLeft = '', rawRight = '';
+
+                if (qStr.includes('...')) {
+                    const compParts = qStr.split('...');
+                    rawLeft = compParts[0] || '';
+                    rawRight = compParts[1] || '';
+                } else if (qStr.includes('?')) {
+                    const compParts = qStr.split('?');
+                    rawLeft = compParts[0] || '';
+                    rawRight = compParts[1] || '';
+                } else if (currentProblem.a !== undefined && currentProblem.b !== undefined) {
+                    rawLeft = String(currentProblem.a);
+                    rawRight = String(currentProblem.b);
+                } else {
+                    rawLeft = qStr;
+                    rawRight = '0';
+                }
+
+                function evalSide(str) {
+                    if (typeof str === 'number') return isNaN(str) ? 0 : str;
+                    if (!str) return 0;
+                    const cleanStr = String(str).trim();
+                    if (!isNaN(Number(cleanStr))) return Number(cleanStr);
+                    const tokens = cleanStr.match(/(\d+|[+-])/g);
+                    if (!tokens) return 0;
+                    let res = 0;
+                    let currentOp = '+';
+                    for (let token of tokens) {
+                        if (token === '+' || token === '-') {
+                            currentOp = token;
+                        } else {
+                            const num = parseInt(token, 10);
+                            if (!isNaN(num)) {
+                                if (currentOp === '+') res += num;
+                                else if (currentOp === '-') res -= num;
+                            }
+                        }
+                    }
+                    return res;
+                }
+
+                const valA = evalSide(rawLeft);
+                const valB = evalSide(rawRight);
+                const cmpSign = String(answer);
+
+                batteryHintFormula.innerHTML = `
+                    <div class="text-center font-sans font-extrabold text-base sm:text-lg">
+                        Сравниваем <span class="text-sky-400">${valA}</span> и <span class="text-emerald-400">${valB}</span> &bull; Нужен знак <span class="text-amber-300 font-black">${cmpSign}</span>
+                    </div>
+                `;
+                return;
+            }
+
+            // 5. Десятки (Круглые числа) - Запрещено менять визуализацию
+            if (isTensProblem) {
+                if (batteriesVisual) batteriesVisual.classList.add('hidden');
+
+                const isAdd = operator === '+';
+                const aTens = Math.floor(a / 10);
+                const bTens = Math.floor(b / 10);
 
                 if (isAdd) {
                     const sumTens = aTens + bTens;
                     batteryHintFormula.innerHTML = `
-            Шаг 1: Считаем десятки (без нулей) ➔ <span class="text-sky-400 font-bold">${aTens} + ${bTens} = ${sumTens}</span><br>
-            Шаг 2: Возвращаем ноль на место ➔ <span class="text-emerald-400 font-bold">${sumTens * 10}</span>
-          `;
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем как единицы:</div>
+                            <div class="text-sky-400 font-black text-sm sm:text-base">${aTens} + ${bTens} = ${sumTens}</div>
+                            <div class="text-emerald-300 font-bold text-xs sm:text-sm">И возвращаем нолик!</div>
+                            <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${answer}</div>
+                        </div>
+                    `;
                 } else {
                     const diffTens = aTens - bTens;
                     batteryHintFormula.innerHTML = `
-            Шаг 1: Считаем десятки (без нулей) ➔ <span class="text-orange-400 font-bold">${aTens} - ${bTens} = ${diffTens}</span><br>
-            Шаг 2: Возвращаем ноль на место ➔ <span class="text-rose-400 font-bold">${diffTens * 10}</span>
-          `;
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем как единицы:</div>
+                            <div class="text-orange-400 font-black text-sm sm:text-base">${aTens} - ${bTens} = ${diffTens}</div>
+                            <div class="text-sky-300 font-bold text-xs sm:text-sm">И возвращаем нолик!</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
+                        </div>
+                    `;
                 }
                 return;
             }
 
-            if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+            // 6. До 10 (Сложение/вычитание до 10) - Запрещено менять визуализацию
+            if (isUpTo10 || (a <= 10 && b <= 10 && (a + b) <= 10 && operator === '+') || (a <= 10 && operator === '-' && (a - b) >= 0 && a !== 10)) {
+                if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
-            if (currentRuleType === 'sub_ten') {
-                const { toTen, remain } = currentProblem.splitHelp;
-                const finalResult = 10 - remain;
+                if (operator === '-') {
+                    batteryHintFormula.innerHTML = `
+                        <div class="text-center font-sans font-extrabold text-base sm:text-lg">
+                            Было <span class="text-emerald-400">${a}</span>. Отняли <span class="text-amber-400">${b}</span>. Осталось <span class="text-sky-400">${answer}</span>.
+                        </div>
+                    `;
+                } else {
+                    batteryHintFormula.innerHTML = `
+                        <div class="text-center font-sans font-extrabold text-base sm:text-lg">
+                            Пример: <span class="text-sky-400 font-bold">${a}</span> + <span class="text-emerald-400 font-bold">${b}</span> = <span class="text-indigo-400 font-bold">${answer}</span>
+                        </div>
+                    `;
+                }
+                return;
+            }
 
-                if (labelTens) labelTens.textContent = 'Десяток (10)';
-                if (labelOnes) labelOnes.textContent = `Единицы (${toTen})`;
+            // --- ОБЛАСТЬ РАЗРЕШЕННЫХ ИЗМЕНЕНИЙ (СЧЕТНЫЕ ПАЛОЧКИ) ---
 
-                batteryHintFormula.innerHTML = `
-          Шаг 1: Спускаемся до 10 ➔ <span class="text-orange-400 font-bold">${firstTerm} - ${toTen} = 10</span><br>
-          Шаг 2: Отнимаем остаток ➔ <span class="text-rose-400 font-bold">10 - ${remain} = ${10 - remain}</span>
-        `;
+            // 7.1. Состав 10 (например, 10 - 3 = 7 или 3 + 7 = 10)
+            if (currentRuleType === 'topic_3' || currentRuleType === 'target_10' || currentRuleType === 'composition10' || (operator === '-' && a === 10 && b <= 10) || (operator === '+' && (a + b) === 10)) {
+                if (batteriesVisual) batteriesVisual.classList.remove('hidden');
 
-                // ШАГ 0: Показываем уменьшаемое
-                renderTenFrame('frame-tens', 10);
-                renderTenFrame('frame-ones', toTen);
-
-                // ШАГ 1: Гасим единицы справа
-                hintStepTimer1 = setTimeout(() => {
-                    if (labelOnes) labelOnes.textContent = 'Единицы (0)';
-                    renderTenFrame('frame-ones', 0);
-                    if (window.Telegram?.WebApp?.HapticFeedback) {
-                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                    }
-                }, 800);
-
-                // ШАГ 2: Гасим остаток в левой рамке
-                hintStepTimer2 = setTimeout(() => {
-                    if (labelTens) labelTens.textContent = `Остаток (${finalResult})`;
-                    renderTenFrame('frame-tens', finalResult);
-                    if (window.Telegram?.WebApp?.HapticFeedback) {
-                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                    }
-                }, 1600);
-            } else if (currentRuleType === 'over_ten') {
-                const { toTen, remain } = currentProblem.splitHelp;
-
-                if (labelTens) labelTens.textContent = `Первое (${firstTerm})`;
-                if (labelOnes) labelOnes.textContent = `Второе (${secondTerm})`;
-
-                batteryHintFormula.innerHTML = `
-          Шаг 1: Сначала соберем 10 ➔ <span class="text-sky-400 font-bold">${firstTerm} + ${toTen} = 10</span><br>
-          Шаг 2: А теперь добавим остаток ➔ <span class="text-emerald-400 font-bold">10 + ${remain} = ${10 + remain}</span>
-        `;
-
-                // ШАГ 0: Исходные слагаемые
-                renderTenFrame('frame-tens', firstTerm);
-                renderTenFrame('frame-ones', secondTerm);
-
-                // ШАГ 1: Дополнить слева до 10
-                hintStepTimer1 = setTimeout(() => {
-                    if (labelTens) labelTens.textContent = 'Десяток (10)';
-                    if (labelOnes) labelOnes.textContent = `Остаток (${remain})`;
-                    renderTenFrame('frame-tens', 10);
-                    renderTenFrame('frame-ones', remain);
-                    if (window.Telegram?.WebApp?.HapticFeedback) {
-                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                    }
-                }, 800);
-            } else {
-                // Состав 10 или Числа до 20
-                const isSub = isSubtraction;
-                const xVal = isSub ? secondTerm : firstTerm;
+                const xVal = operator === '-' ? b : a;
                 const remainVal = Math.max(0, 10 - xVal);
 
-                if (firstTerm >= 10 || secondTerm >= 10) {
-                    // Числа до 20
-                    const rawUnit = firstTerm === 10 ? secondTerm : (secondTerm === 10 ? firstTerm : (firstTerm % 10 || secondTerm % 10));
-                    const unitDigit = Math.abs(rawUnit) % 10;
-                    if (labelTens) labelTens.textContent = 'Десяток (10)';
-                    if (labelOnes) labelOnes.textContent = `Единицы (${unitDigit})`;
+                if (operator === '-') {
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Состав числа 10: 10 - ${xVal} = ${remainVal}</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Было 10 палочек. Зачеркиваем ${xVal} палочек.</div>
+                            <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Остается ${remainVal} палочек!</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: 10 - ${xVal} = ${remainVal}</div>
+                        </div>
+                    `;
 
-                    renderTenFrame('frame-tens', 10);
-                    renderTenFrame('frame-ones', unitDigit);
-                } else if (isSub) {
-                    if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
-                    if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
-                    if (labelTens) labelTens.textContent = 'Было (10)';
+                    // ШАГ 0: 10 палочек
+                    renderSticks('sticks-container', 10, 0);
 
-                    batteryHintFormula.innerHTML = `Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>`;
-
-                    renderTenFrame('frame-tens', 10);
+                    // ШАГ 1: Зачеркнуть xVal палочек
                     hintStepTimer1 = setTimeout(() => {
-                        if (labelTens) labelTens.textContent = `Осталось (${remainVal})`;
-                        renderTenFrame('frame-tens', remainVal);
+                        renderSticks('sticks-container', 10, xVal);
                         if (window.Telegram?.WebApp?.HapticFeedback) {
                             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                         }
                     }, 800);
                 } else {
-                    if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
-                    if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
-                    if (labelTens) labelTens.textContent = `Было (${firstTerm})`;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Состав числа 10: ${xVal} + ${remainVal} = 10</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Число 10 состоит из ${xVal} и ${remainVal}.</div>
+                            <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Значит, ${xVal} + ${remainVal} = 10!</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${xVal} + ${remainVal} = 10</div>
+                        </div>
+                    `;
 
-                    batteryHintFormula.innerHTML = `Состав числа 10 ➔ <span class="text-sky-400 font-bold">${firstTerm}</span> и <span class="text-emerald-400 font-bold">${secondTerm}</span> вместе дают <span class="text-indigo-400 font-bold">10</span>`;
-
-                    renderTenFrame('frame-tens', firstTerm);
-                    hintStepTimer1 = setTimeout(() => {
-                        if (labelTens) labelTens.textContent = 'Десяток (10)';
-                        renderTenFrame('frame-tens', 10);
-                        if (window.Telegram?.WebApp?.HapticFeedback) {
-                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                        }
-                    }, 800);
+                    renderSticks('sticks-container', 10, 0, remainVal);
                 }
+                return;
+            }
+
+            // 7.2. Числа до 20 (например, 14 - 10, 14 - 4, 10 + 4)
+            if (currentRuleType === 'topic_4' || currentRuleType === 'up_to_20_no_carry' || (a > 0 && b > 0 && a <= 20 && b <= 20 && (a + b) <= 20 && (a >= 10 || b >= 10) && (a % 10 === 0 || b % 10 === 0))) {
+                if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+
+                const total = answer || (a + b);
+
+                if (operator === '+') {
+                    const sec = a === 10 ? b : a;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и ${sec} единиц (${sec}) образуют ${total}.</div>
+                            <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
+                        </div>
+                    `;
+                    renderSticks('sticks-container', total, 0, sec);
+                } else {
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Из ${a} забираем ${b}.</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
+                        </div>
+                    `;
+                    renderSticks('sticks-container', a, b, 0);
+                }
+                return;
+            }
+
+            // 7.3. Вычитание через десяток (sub_ten) - например, 13 - 7
+            if (currentRuleType === 'sub_ten' || currentRuleType === 'topic_8' || (operator === '-' && a > 10 && b > (a - 10))) {
+                if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+
+                const toTen = a > 10 ? (a - 10) : 1;
+                const remain = b - toTen;
+
+                batteryHintFormula.innerHTML = `
+                    <div class="flex flex-col items-center gap-1 font-sans text-center">
+                        <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Удобно вычитать по частям:</div>
+                        <div class="text-sky-400 font-black text-sm sm:text-base">1) ${a} - ${toTen} = 10</div>
+                        <div class="text-rose-400 font-black text-sm sm:text-base">2) 10 - ${remain} = ${answer}</div>
+                        <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${answer}</div>
+                    </div>
+                `;
+
+                // ШАГ 0 (при открытии): renderSticks(container, a, 0)
+                renderSticks('sticks-container', a, 0);
+
+                // ШАГ 1 (отнимаем до 10): renderSticks(container, a, toTen)
+                hintStepTimer1 = setTimeout(() => {
+                    renderSticks('sticks-container', a, toTen);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 800);
+
+                // ШАГ 2 (отнимаем остаток): renderSticks(container, a, b)
+                hintStepTimer2 = setTimeout(() => {
+                    renderSticks('sticks-container', a, b);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 1600);
+                return;
+            }
+
+            // 7.4. Сложение через десяток (over_ten) - например, 8 + 6
+            if (currentRuleType === 'over_ten' || currentRuleType === 'topic_7' || (operator === '+' && a < 10 && (a + b) > 10)) {
+                if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+
+                const isSwapped = a < b;
+                const first = isSwapped ? b : a;
+                const second = isSwapped ? a : b;
+
+                const toTen = 10 - first;
+                const remain = second - toTen;
+
+                const swapNotice = isSwapped ? `<div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Удобнее менять местами: ${b} + ${a}</div>` : '';
+
+                batteryHintFormula.innerHTML = `
+                    <div class="flex flex-col items-center gap-1 font-sans text-center">
+                        ${swapNotice}
+                        <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Удобно складывать по частям:</div>
+                        <div class="text-sky-400 font-black text-sm sm:text-base">1) ${first} + ${toTen} = 10</div>
+                        <div class="text-emerald-400 font-black text-sm sm:text-base">2) 10 + ${remain} = ${answer}</div>
+                        <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${answer}</div>
+                    </div>
+                `;
+
+                // ШАГ 0: Показываем first палочек цвет 1, second палочек цвет 2
+                renderSticks('sticks-container', first + second, 0, second);
+
+                // ШАГ 1: Показываем 10 + remain
+                hintStepTimer1 = setTimeout(() => {
+                    renderSticks('sticks-container', first + second, 0, remain);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 800);
+                return;
             }
         }
         }

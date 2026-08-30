@@ -5096,55 +5096,45 @@
             }
         }
 
-        // --- ЛОГИКА ДЕСЯТИЧНЫХ РАМОК (TEN-FRAMES 2x5) ---
+        // --- ЛОГИКА СЧЕТНЫХ ПАЛОЧЕК (COUNTING STICKS) ---
         let hintStepTimer1 = null;
         let hintStepTimer2 = null;
 
-        /* 
-        // Старая функция отрисовки батареек закомментирована по требованию безопасности
-        function updateBatterySegments(selector, value, customActiveColor) { ... }
-        */
-
-        function renderTenFrame(containerId, count) {
-            const container = document.getElementById(containerId);
+        function renderSticks(containerIdOrEl, total, crossedOutCount = 0, secondaryCount = 0) {
+            const container = typeof containerIdOrEl === 'string' ? document.getElementById(containerIdOrEl) : containerIdOrEl;
             if (!container) return;
             container.innerHTML = '';
-            const validCount = Math.max(0, Math.min(10, parseInt(count, 10) || 0));
 
-            for (let i = 0; i < 10; i++) {
-                const slot = document.createElement('div');
-                slot.className = 'w-7 h-7 rounded-full border-2 border-slate-700 bg-slate-900 flex items-center justify-center relative';
+            const validTotal = Math.max(0, parseInt(total, 10) || 0);
+            const validCrossed = Math.max(0, parseInt(crossedOutCount, 10) || 0);
+            const validSecondary = Math.max(0, parseInt(secondaryCount, 10) || 0);
+            const primaryCount = Math.max(0, validTotal - validSecondary);
 
-                if (i < validCount) {
-                    const crystal = document.createElement('div');
-                    crystal.className = 'w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 absolute crystal-glow transition-all duration-300 scale-100';
-                    slot.appendChild(crystal);
+            for (let i = 0; i < validTotal; i++) {
+                const stick = document.createElement('div');
+                const isSecondary = i >= primaryCount;
+                const colorClass = isSecondary ? 'stick-emerald' : 'stick-cyan';
+
+                stick.className = `stick ${colorClass}`;
+
+                if (i >= (validTotal - validCrossed)) {
+                    stick.classList.add('stick-crossed');
                 }
 
-                container.appendChild(slot);
+                container.appendChild(stick);
             }
         }
 
         function resetBatteries() {
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
-            renderTenFrame('frame-tens', 0);
-            renderTenFrame('frame-ones', 0);
+
+            renderSticks('sticks-container', 0, 0, 0);
 
             const battery1TextEl = document.getElementById('battery-1-text');
             const battery2TextEl = document.getElementById('battery-2-text');
             if (battery1TextEl) battery1TextEl.textContent = "0";
             if (battery2TextEl) battery2TextEl.textContent = "0";
-
-            const frameOnesWrapper = document.getElementById('frame-ones-wrapper');
-            if (frameOnesWrapper) {
-                frameOnesWrapper.classList.remove('hidden');
-                frameOnesWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-            }
-            const frameTensWrapper = document.getElementById('frame-tens-wrapper');
-            if (frameTensWrapper) {
-                frameTensWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-            }
         }
 
         function showHint() {
@@ -5490,14 +5480,11 @@
                 return;
             }
 
-            // --- ОБЛАСТЬ РАЗРЕШЕННЫХ ИЗМЕНЕНИЙ (TEN-FRAMES 2x5) ---
+            // --- ОБЛАСТЬ РАЗРЕШЕННЫХ ИЗМЕНЕНИЙ (СЧЕТНЫЕ ПАЛОЧКИ) ---
 
             // 7.1. Состав 10 (например, 10 - 3 = 7 или 3 + 7 = 10)
             if (currentRuleType === 'topic_3' || currentRuleType === 'target_10' || currentRuleType === 'composition10' || (operator === '-' && a === 10 && b <= 10) || (operator === '+' && (a + b) === 10)) {
                 if (batteriesVisual) batteriesVisual.classList.remove('hidden');
-
-                if (frameOnesWrapper) frameOnesWrapper.classList.add('hidden');
-                if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-full";
 
                 const xVal = operator === '-' ? b : a;
                 const remainVal = Math.max(0, 10 - xVal);
@@ -5505,99 +5492,71 @@
                 if (operator === '-') {
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">🔵 ${xVal} + 🟢 ${remainVal} = 10</div>
-                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Число 10 состоит из ${xVal} и ${remainVal}.</div>
-                            <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Если забрать ${xVal}, останется ${remainVal}!</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Состав числа 10: 10 - ${xVal} = ${remainVal}</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Было 10 палочек. Зачеркиваем ${xVal} палочек.</div>
+                            <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Остается ${remainVal} палочек!</div>
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: 10 - ${xVal} = ${remainVal}</div>
                         </div>
                     `;
+
+                    // ШАГ 0: 10 палочек
+                    renderSticks('sticks-container', 10, 0);
+
+                    // ШАГ 1: Зачеркнуть xVal палочек
+                    hintStepTimer1 = setTimeout(() => {
+                        renderSticks('sticks-container', 10, xVal);
+                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                        }
+                    }, 800);
                 } else {
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">🔵 ${xVal} + 🟢 ${remainVal} = 10</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Состав числа 10: ${xVal} + ${remainVal} = 10</div>
                             <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Число 10 состоит из ${xVal} и ${remainVal}.</div>
                             <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Значит, ${xVal} + ${remainVal} = 10!</div>
                             <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${xVal} + ${remainVal} = 10</div>
                         </div>
                     `;
-                }
 
-                renderTenFrame('frame-tens', 10);
+                    renderSticks('sticks-container', 10, 0, remainVal);
+                }
                 return;
             }
 
-            // 7.2. Числа до 20 (состав чисел 10-20, например, 10 + 9 или 10 + 4)
+            // 7.2. Числа до 20 (например, 14 - 10, 14 - 4, 10 + 4)
             if (currentRuleType === 'topic_4' || currentRuleType === 'up_to_20_no_carry' || (a > 0 && b > 0 && a <= 20 && b <= 20 && (a + b) <= 20 && (a >= 10 || b >= 10) && (a % 10 === 0 || b % 10 === 0))) {
                 if (batteriesVisual) batteriesVisual.classList.remove('hidden');
 
-                if (frameOnesWrapper) {
-                    frameOnesWrapper.classList.remove('hidden');
-                    frameOnesWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-                }
-                if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-
-                const unitVal = a === 10 ? b : (b === 10 ? a : (a % 10 || b % 10));
                 const total = answer || (a + b);
 
-                if (labelTens) labelTens.textContent = 'Десяток (10)';
-                if (labelOnes) labelOnes.textContent = `Единицы (${unitVal})`;
-
                 if (operator === '+') {
+                    const sec = a === 10 ? b : a;
                     batteryHintFormula.innerHTML = `
                         <div class="flex flex-col items-center gap-1 font-sans text-center">
-                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Объяснение: 1 десяток (10) и ${unitVal} единиц (${unitVal}) вместе образуют число ${total}.</div>
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">1 десяток (10) и ${sec} единиц (${sec}) образуют ${total}.</div>
                             <div class="text-emerald-400 font-black text-base sm:text-lg mt-0.5">Итог: ${a} + ${b} = ${total}</div>
                         </div>
                     `;
+                    renderSticks('sticks-container', total, 0, sec);
                 } else {
-                    const subTotal = a;
-                    const subUnit = a % 10;
-                    if (b === subUnit) {
-                        batteryHintFormula.innerHTML = `
-                            <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Объяснение: Забираем ${subUnit} единиц из числа ${subTotal}, остается 1 десяток (10).</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
-                            </div>
-                        `;
-                    } else if (b === 10) {
-                        batteryHintFormula.innerHTML = `
-                            <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Объяснение: Забираем 1 десяток (10) из числа ${subTotal}, остаются ${subUnit} единиц (${subUnit}).</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
-                            </div>
-                        `;
-                    } else {
-                        const diffU = subUnit - b;
-                        batteryHintFormula.innerHTML = `
-                            <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Вычитаем единицы: ${subUnit} - ${b} = ${diffU}</div>
-                                <div class="text-sky-400 font-extrabold text-xs sm:text-sm">1 десяток и ${diffU} единиц образуют ${answer}</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
-                            </div>
-                        `;
-                    }
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Из ${a} забираем ${b}.</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Итог: ${a} - ${b} = ${answer}</div>
+                        </div>
+                    `;
+                    renderSticks('sticks-container', a, b, 0);
                 }
-
-                renderTenFrame('frame-tens', 10);
-                renderTenFrame('frame-ones', unitVal);
                 return;
             }
 
-            // 7.3. Вычитание через десяток (sub_ten) - например, 11 - 7 или 12 - 7
+            // 7.3. Вычитание через десяток (sub_ten) - например, 13 - 7
             if (currentRuleType === 'sub_ten' || currentRuleType === 'topic_8' || (operator === '-' && a > 10 && b > (a - 10))) {
                 if (batteriesVisual) batteriesVisual.classList.remove('hidden');
 
-                if (frameOnesWrapper) {
-                    frameOnesWrapper.classList.remove('hidden');
-                    frameOnesWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-                }
-                if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-
                 const toTen = a > 10 ? (a - 10) : 1;
                 const remain = b - toTen;
-
-                if (labelTens) labelTens.textContent = 'Десяток (10)';
-                if (labelOnes) labelOnes.textContent = `Единицы (${toTen})`;
 
                 batteryHintFormula.innerHTML = `
                     <div class="flex flex-col items-center gap-1 font-sans text-center">
@@ -5608,32 +5567,30 @@
                     </div>
                 `;
 
-                // Пошаговая визуализация
-                renderTenFrame('frame-tens', 10);
-                renderTenFrame('frame-ones', toTen);
-                if (window.Telegram?.WebApp?.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                }
+                // ШАГ 0 (при открытии): renderSticks(container, a, 0)
+                renderSticks('sticks-container', a, 0);
 
-                hintStepTimer = setTimeout(() => {
-                    renderTenFrame('frame-ones', 0);
-                    renderTenFrame('frame-tens', 10 - remain);
+                // ШАГ 1 (отнимаем до 10): renderSticks(container, a, toTen)
+                hintStepTimer1 = setTimeout(() => {
+                    renderSticks('sticks-container', a, toTen);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
-                }, 750);
+                }, 800);
+
+                // ШАГ 2 (отнимаем остаток): renderSticks(container, a, b)
+                hintStepTimer2 = setTimeout(() => {
+                    renderSticks('sticks-container', a, b);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 1600);
                 return;
             }
 
-            // 7.4. Сложение через десяток (over_ten) - например, 8 + 5
+            // 7.4. Сложение через десяток (over_ten) - например, 8 + 6
             if (currentRuleType === 'over_ten' || currentRuleType === 'topic_7' || (operator === '+' && a < 10 && (a + b) > 10)) {
                 if (batteriesVisual) batteriesVisual.classList.remove('hidden');
-
-                if (frameOnesWrapper) {
-                    frameOnesWrapper.classList.remove('hidden');
-                    frameOnesWrapper.className = "flex flex-col items-center gap-1 w-1/2";
-                }
-                if (frameTensWrapper) frameTensWrapper.className = "flex flex-col items-center gap-1 w-1/2";
 
                 const isSwapped = a < b;
                 const first = isSwapped ? b : a;
@@ -5641,9 +5598,6 @@
 
                 const toTen = 10 - first;
                 const remain = second - toTen;
-
-                if (labelTens) labelTens.textContent = `Первое (${first})`;
-                if (labelOnes) labelOnes.textContent = `Второе (${second})`;
 
                 const swapNotice = isSwapped ? `<div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Удобнее менять местами: ${b} + ${a}</div>` : '';
 
@@ -5657,22 +5611,16 @@
                     </div>
                 `;
 
-                // Пошаговая визуализация
-                renderTenFrame('frame-tens', first);
-                renderTenFrame('frame-ones', second);
-                if (window.Telegram?.WebApp?.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                }
+                // ШАГ 0: Показываем first палочек цвет 1, second палочек цвет 2
+                renderSticks('sticks-container', first + second, 0, second);
 
-                hintStepTimer = setTimeout(() => {
-                    if (labelTens) labelTens.textContent = 'Десяток (10)';
-                    if (labelOnes) labelOnes.textContent = `Остаток (${remain})`;
-                    renderTenFrame('frame-tens', 10);
-                    renderTenFrame('frame-ones', remain);
+                // ШАГ 1: Показываем 10 + remain
+                hintStepTimer1 = setTimeout(() => {
+                    renderSticks('sticks-container', first + second, 0, remain);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
-                }, 750);
+                }, 800);
                 return;
             }
         }
