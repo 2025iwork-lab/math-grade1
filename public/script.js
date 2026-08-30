@@ -1342,19 +1342,24 @@
                 const secondNum = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : 0);
                 const op = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
 
-                if (currentProblem && currentProblem.operator) {
-                    if (currentProblem.firstUnit === 'дм') {
+                if (currentProblem && (currentProblem.operator || qStr.includes('+') || qStr.includes('-'))) {
+                    const opStr = currentProblem.operator || (qStr.includes('-') ? '-' : '+');
+                    const aVal = currentProblem.a !== undefined ? currentProblem.a : (firstNum || 10);
+                    const bVal = currentProblem.b !== undefined ? currentProblem.b : secondNum;
+                    const ansVal = currentProblem.correctAnswer !== undefined ? currentProblem.correctAnswer : ans;
+
+                    if (currentProblem.firstUnit === 'дм' || qStr.includes('дм')) {
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: 10 ${currentProblem.operator} ${currentProblem.b} = ${currentProblem.correctAnswer}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${currentProblem.correctAnswer} см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: 10 ${opStr} ${bVal} = ${ansVal}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
                             </div>
                         `;
                     } else {
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${currentProblem.a} ${currentProblem.operator} ${currentProblem.b} = ${currentProblem.correctAnswer}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${currentProblem.correctAnswer} см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем: ${aVal} ${opStr} ${bVal} = ${ansVal}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
                             </div>
                         `;
                     }
