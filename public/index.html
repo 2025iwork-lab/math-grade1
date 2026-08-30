@@ -4363,8 +4363,8 @@
                                 const item = options[Math.floor(Math.random() * options.length)];
                                 return { question: `${item.labelA} ... ${item.labelB}`, correctAnswer: item.ans, isComparison: true };
                             } else {
-                                const isDmAddSub = Math.random() < 0.4;
-                                if (isDmAddSub) {
+                                const useDm = Math.random() < 0.5;
+                                if (useDm) {
                                     const isAdd = Math.random() < 0.5;
                                     if (isAdd) {
                                         const b = Math.floor(Math.random() * 8) + 1;
