@@ -5106,6 +5106,30 @@
             }
         }
 
+        function renderAdditionSticks(firstNum, secondNum, step) {
+            const container = document.getElementById('sticks-container');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            let totalToShow = 0;
+            if (step === 0) totalToShow = firstNum; // Старт: только первое слагаемое
+            if (step === 1) totalToShow = 10;       // Шаг 1: добили до круглого десятка
+            if (step === 2) totalToShow = firstNum + secondNum; // Шаг 2: итоговая сумма
+
+            for (let i = 0; i < totalToShow; i++) {
+                const stick = document.createElement('div');
+                
+                // Первое слагаемое — голубое, второе (прибавляемое) — фиолетовое
+                if (i < firstNum) {
+                    stick.className = 'w-2 h-10 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] transition-all duration-300';
+                } else {
+                    stick.className = 'w-2 h-10 rounded-full bg-fuchsia-400 shadow-[0_0_8px_#e879f9] transition-all duration-300';
+                }
+                
+                container.appendChild(stick);
+            }
+        }
+
         function resetBatteries() {
             if (hintStepTimer1) { clearTimeout(hintStepTimer1); hintStepTimer1 = null; }
             if (hintStepTimer2) { clearTimeout(hintStepTimer2); hintStepTimer2 = null; }
@@ -5592,16 +5616,24 @@
                     </div>
                 `;
 
-                // ШАГ 0: Показываем first + second палочек
-                renderSticks(first + second, 0);
+                // ШАГ 0: Показываем только первое слагаемое (first)
+                renderAdditionSticks(first, second, 0);
 
-                // ШАГ 1: Показываем 10 + remain
+                // ШАГ 1: Добиваем до десятка (10)
                 hintStepTimer1 = setTimeout(() => {
-                    renderSticks(first + second, 0);
+                    renderAdditionSticks(first, second, 1);
                     if (window.Telegram?.WebApp?.HapticFeedback) {
                         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                     }
                 }, 800);
+
+                // ШАГ 2: Итоговая сумма (first + second)
+                hintStepTimer2 = setTimeout(() => {
+                    renderAdditionSticks(first, second, 2);
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                }, 1600);
                 return;
             }
         }
