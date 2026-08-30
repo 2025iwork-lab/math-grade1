@@ -1342,26 +1342,19 @@
                 const secondNum = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : 0);
                 const op = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
 
-                if (currentProblem && (currentProblem.operator || qStr.includes('+') || qStr.includes('-'))) {
-                    if ((currentProblem && currentProblem.firstUnit === 'дм') || qStr.includes('дм')) {
-                        const opStr = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
-                        const bVal = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : (matches[0] ? parseInt(matches[0], 10) : 0));
-                        const ansVal = (currentProblem && currentProblem.correctAnswer !== undefined) ? currentProblem.correctAnswer : ans;
+                if (currentProblem && currentProblem.operator) {
+                    if (currentProblem.firstUnit === 'дм') {
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: 10 ${opStr} ${bVal} = ${ansVal}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: 10 ${currentProblem.operator} ${currentProblem.b} = ${currentProblem.correctAnswer}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${currentProblem.correctAnswer} см</div>
                             </div>
                         `;
                     } else {
-                        const aVal = (currentProblem && currentProblem.a !== undefined) ? currentProblem.a : (matches[0] ? parseInt(matches[0], 10) : 0);
-                        const bVal = (currentProblem && currentProblem.b !== undefined) ? currentProblem.b : (matches[1] ? parseInt(matches[1], 10) : 0);
-                        const opStr = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
-                        const ansVal = (currentProblem && currentProblem.correctAnswer !== undefined) ? currentProblem.correctAnswer : ans;
                         batteryHintFormula.innerHTML = `
                             <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${aVal} ${opStr} ${bVal} = ${ansVal}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
+                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем числа: ${currentProblem.a} ${currentProblem.operator} ${currentProblem.b} = ${currentProblem.correctAnswer}.</div>
+                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${currentProblem.correctAnswer} см</div>
                             </div>
                         `;
                     }
