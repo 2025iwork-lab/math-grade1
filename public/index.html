@@ -21,15 +21,15 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="app-version" content="3.2">
+    <meta name="app-version" content="3.3">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Telegram Web App SDK & Local Scripts -->
-    <script src="https://telegram.org/js/telegram-web-app.js?v=3.2"></script>
-    <script src="script.js?v=3.2"></script>
-    <script src="app.js?v=3.2"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=3.3"></script>
+    <script src="script.js?v=3.3"></script>
+    <script src="app.js?v=3.3"></script>
 
     <script>
         tailwind.config = {
@@ -5326,26 +5326,45 @@
                 const op = (currentProblem && currentProblem.operator) ? currentProblem.operator : (qStr.includes('-') ? '-' : '+');
 
                 if (currentProblem && (currentProblem.operator || qStr.includes('+') || qStr.includes('-'))) {
-                    const opStr = currentProblem.operator || (qStr.includes('-') ? '-' : '+');
-                    const aVal = currentProblem.a !== undefined ? currentProblem.a : (firstNum || 10);
-                    const bVal = currentProblem.b !== undefined ? currentProblem.b : secondNum;
+                    const pType = currentProblem.type;
                     const ansVal = currentProblem.correctAnswer !== undefined ? currentProblem.correctAnswer : ans;
 
-                    if (currentProblem.firstUnit === 'дм' || qStr.includes('дм')) {
-                        batteryHintFormula.innerHTML = `
-                            <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Переводим: 1 дм = 10 см. Считаем: 10 ${opStr} ${bVal} = ${ansVal}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
-                            </div>
-                        `;
+                    let hintText = "";
+
+                    if (pType === 'cm_add_dm' || qStr.includes('см + 1 дм') || qStr.includes('см +1 дм')) {
+                        // Пример: "6 см + 1 дм = ?" -> Переводим: 1 дм = 10 см. Считаем: 6 + 10 = 16.
+                        const xVal = currentProblem.a !== undefined ? currentProblem.a : (firstNum || (ansVal - 10));
+                        hintText = `Переводим: 1 дм = 10 см. Считаем: ${xVal} + 10 = ${ansVal}.`;
+                    } else if (pType === 'dm_cm_add' || qStr.startsWith('1 дм +')) {
+                        // Пример: "1 дм + 4 см = ?" -> Переводим: 1 дм = 10 см. Считаем: 10 + 4 = 14.
+                        const xVal = currentProblem.b !== undefined ? currentProblem.b : (secondNum || (ansVal - 10));
+                        hintText = `Переводим: 1 дм = 10 см. Считаем: 10 + ${xVal} = ${ansVal}.`;
+                    } else if (pType === 'dm_cm_sub_dm' || (qStr.includes('дм') && qStr.includes('см') && qStr.includes('- 1 дм'))) {
+                        // Пример: "1 дм 6 см - 1 дм = ?" -> Переводим: 1 дм 6 см = 16 см, 1 дм = 10 см. Считаем: 16 - 10 = 6.
+                        const xVal = ansVal;
+                        const totalCm = 10 + xVal;
+                        hintText = `Переводим: 1 дм ${xVal} см = ${totalCm} см, 1 дм = 10 см. Считаем: ${totalCm} - 10 = ${xVal}.`;
+                    } else if (pType === 'cm_sub_dm' || qStr.includes('см - 1 дм') || qStr.includes('см -1 дм')) {
+                        // Пример: "15 см - 1 дм = ?" -> Переводим: 1 дм = 10 см. Считаем: 15 - 10 = 5.
+                        const aVal = currentProblem.a !== undefined ? currentProblem.a : (firstNum || (ansVal + 10));
+                        hintText = `Переводим: 1 дм = 10 см. Считаем: ${aVal} - 10 = ${ansVal}.`;
+                    } else if (pType === 'dm_sub_cm' || qStr.startsWith('1 дм -')) {
+                        // Пример: "1 дм - 4 см = ?" -> Переводим: 1 дм = 10 см. Считаем: 10 - 4 = 6.
+                        const bVal = currentProblem.b !== undefined ? currentProblem.b : (secondNum || (10 - ansVal));
+                        hintText = `Переводим: 1 дм = 10 см. Считаем: 10 - ${bVal} = ${ansVal}.`;
                     } else {
-                        batteryHintFormula.innerHTML = `
-                            <div class="flex flex-col items-center gap-1 font-sans text-center">
-                                <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">Считаем: ${aVal} ${opStr} ${bVal} = ${ansVal}.</div>
-                                <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
-                            </div>
-                        `;
+                        const opStr = currentProblem.operator || (qStr.includes('-') ? '-' : '+');
+                        const aVal = currentProblem.a !== undefined ? currentProblem.a : (firstNum || 10);
+                        const bVal = currentProblem.b !== undefined ? currentProblem.b : secondNum;
+                        hintText = `Считаем: ${aVal} ${opStr} ${bVal} = ${ansVal}.`;
                     }
+
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm">${hintText}</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Ответ: ${ansVal} см</div>
+                        </div>
+                    `;
                     return;
                 }
 
