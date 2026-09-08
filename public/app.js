@@ -610,9 +610,12 @@
                     if (type === 'target_10') {
                         const firstTerm = Math.floor(Math.random() * 9) + 1;
                         const secondTerm = 10 - firstTerm;
+                        // Вопрос без "= 10" — глобальный UI сам добавит "= [?]"
                         return {
-                            question: `${firstTerm} + ${secondTerm}`,
-                            correctAnswer: 10
+                            a: firstTerm, operator: '+', b: secondTerm,
+                            question: `К ${firstTerm} прибавить, чтобы стало 10`,
+                            correctAnswer: secondTerm,
+                            type: 'missing_addend', knownAddend: firstTerm, missingAddend: secondTerm
                         };
                     } else if (type === 'over_ten') {
                         const firstTerm = Math.floor(Math.random() * 8) + 2;
@@ -1580,7 +1583,10 @@
             }
 
             // 6. До 10 (Сложение/вычитание до 10) - Запрещено менять визуализацию
-            if (isUpTo10 || (a <= 10 && b <= 10 && (a + b) <= 10 && operator === '+') || (a <= 10 && operator === '-' && (a - b) >= 0 && a !== 10)) {
+            // Защита: не перехватываем задачи «Состав 10» (тема 3 / target_10) и неизвестное слагаемое
+            const isComposition10Topic = currentRuleType === 'topic_3' || currentRuleType === 'target_10' || currentRuleType === 'composition10';
+            const isMissingAddend = currentProblem && currentProblem.type === 'missing_addend';
+            if (!isComposition10Topic && !isMissingAddend && (isUpTo10 || (a <= 10 && b <= 10 && (a + b) <= 10 && operator === '+') || (a <= 10 && operator === '-' && (a - b) >= 0 && a !== 10))) {
                 if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
                 if (operator === '-') {
@@ -1604,6 +1610,22 @@
             // 7.1. Состав 10 (например, 10 - 3 = 7 или 3 + 7 = 10)
             if (currentRuleType === 'topic_3' || currentRuleType === 'target_10' || currentRuleType === 'composition10' || (operator === '-' && a === 10 && b <= 10) || (operator === '+' && (a + b) === 10)) {
                 if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+
+                // Специальный кейс: поиск неизвестного слагаемого (уровень 3 / target_10)
+                if (currentProblem && currentProblem.type === 'missing_addend') {
+                    const knownA = currentProblem.knownAddend !== undefined ? currentProblem.knownAddend : a;
+                    const missingB = currentProblem.missingAddend !== undefined ? currentProblem.missingAddend : answer;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Состав числа 10: ${knownA} + ${missingB} = 10</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Число 10 состоит из ${knownA} и ${missingB}.</div>
+                            <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Значит, нужно прибавить ${missingB}!</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Проверка: ${knownA} + ${missingB} = 10</div>
+                        </div>
+                    `;
+                    renderSticks(10, 0);
+                    return;
+                }
 
                 const xVal = operator === '-' ? b : a;
                 const remainVal = Math.max(0, 10 - xVal);

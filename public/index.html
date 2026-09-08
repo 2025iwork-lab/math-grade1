@@ -21,15 +21,15 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="app-version" content="3.3">
+    <meta name="app-version" content="3.5">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Telegram Web App SDK & Local Scripts -->
-    <script src="https://telegram.org/js/telegram-web-app.js?v=3.3"></script>
-    <script src="script.js?v=3.3"></script>
-    <script src="app.js?v=3.3"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=3.5"></script>
+    <script src="script.js?v=3.5"></script>
+    <script src="app.js?v=3.5"></script>
 
     <script>
         tailwind.config = {
@@ -4300,9 +4300,11 @@
                             const correctAnswer = 10 - b;
                             return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer };
                         } else {
+                            // Уровень 3: найди неизвестное слагаемое (состав 10)
                             const b = Math.floor(Math.random() * 9) + 1;
                             const a = 10 - b;
-                            return { question: `${a} + ? = 10`, correctAnswer: b };
+                            // Вопрос без "= 10" — глобальный UI сам добавит "= [?]"
+                            return { a, operator: '+', b, question: `К ${a} прибавить, чтобы стало 10`, correctAnswer: b, type: 'missing_addend', missingAddend: b, knownAddend: a };
                         }
                     } else if (type === 'topic_4' || type === 'up_to_20_no_carry') {
                         // Числа до 20 без перехода
@@ -5606,6 +5608,22 @@
             // 7.1. Состав 10 (например, 10 - 3 = 7 или 3 + 7 = 10)
             if (currentRuleType === 'topic_3' || currentRuleType === 'target_10' || currentRuleType === 'composition10' || (operator === '-' && a === 10 && b <= 10) || (operator === '+' && (a + b) === 10)) {
                 if (batteriesVisual) batteriesVisual.classList.remove('hidden');
+
+                // Специальный кейс для уровня 3 (поиск неизвестного слагаемого)
+                if (currentProblem && currentProblem.type === 'missing_addend') {
+                    const knownA = currentProblem.knownAddend !== undefined ? currentProblem.knownAddend : a;
+                    const missingB = currentProblem.missingAddend !== undefined ? currentProblem.missingAddend : answer;
+                    batteryHintFormula.innerHTML = `
+                        <div class="flex flex-col items-center gap-1 font-sans text-center">
+                            <div class="text-indigo-300 font-extrabold text-xs sm:text-sm mb-0.5">Состав числа 10: ${knownA} + ${missingB} = 10</div>
+                            <div class="text-sky-400 font-extrabold text-xs sm:text-sm">Число 10 состоит из ${knownA} и ${missingB}.</div>
+                            <div class="text-emerald-300 font-extrabold text-xs sm:text-sm">Значит, нужно прибавить ${missingB}!</div>
+                            <div class="text-amber-300 font-black text-base sm:text-lg mt-0.5">Проверка: ${knownA} + ${missingB} = 10</div>
+                        </div>
+                    `;
+                    renderSticks(10, 0);
+                    return;
+                }
 
                 const xVal = operator === '-' ? b : a;
                 const remainVal = Math.max(0, 10 - xVal);
