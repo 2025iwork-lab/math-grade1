@@ -182,42 +182,55 @@ export class MathEngine {
       const dm = Math.floor(Math.random() * 2) + 1;
       const isCmToDm = Math.random() < 0.5;
       if (isCmToDm) {
-        return { question: `${dm * 10} см = ? дм`, correctAnswer: dm, unit: 'дм', type: 'to_dm_simple' };
+        return { question: `${dm * 10} см = ? дм`, correctAnswer: dm, unit: 'дм', isComparison: false, type: 'to_dm_simple' };
       } else {
-        return { question: `${dm} дм = ? см`, correctAnswer: dm * 10, unit: 'см', type: 'to_cm_simple' };
+        return { question: `${dm} дм = ? см`, correctAnswer: dm * 10, unit: 'см', isComparison: false, type: 'to_cm_simple' };
       }
     } else if (level === 2) {
       const cmPart = Math.floor(Math.random() * 9) + 1;
       const totalCm = 10 + cmPart;
       const isExpand = Math.random() < 0.5;
       if (isExpand) {
-        return { question: `1 дм ${cmPart} см = ? см`, correctAnswer: totalCm, unit: 'см', x: cmPart, type: 'to_cm_mixed' };
+        return { question: `1 дм ${cmPart} см = ? см`, correctAnswer: totalCm, unit: 'см', x: cmPart, isComparison: false, type: 'to_cm_mixed' };
       } else {
-        return { question: `${totalCm} см = 1 дм ? см`, correctAnswer: cmPart, unit: 'см', x: cmPart, type: 'to_cm_mixed' };
+        return { question: `${totalCm} см = 1 дм ? см`, correctAnswer: cmPart, unit: 'см', x: cmPart, isComparison: false, type: 'to_cm_mixed' };
       }
     } else {
-      const taskType = Math.floor(Math.random() * 2);
-      if (taskType === 0) {
+      const isComp = Math.random() < 0.5;
+      if (isComp) {
         const options = [
           { labelA: '1 дм', labelB: '10 см', ans: '=' },
           { labelA: '1 дм', labelB: '8 см', ans: '>' },
           { labelA: '12 см', labelB: '1 дм 5 см', ans: '<' },
           { labelA: '1 дм 4 см', labelB: '14 см', ans: '=' },
           { labelA: '18 см', labelB: '1 дм 6 см', ans: '>' },
-          { labelA: '2 дм', labelB: '19 см', ans: '>' }
+          { labelA: '2 дм', labelB: '19 см', ans: '>' },
+          { labelA: '1 дм 3 см', labelB: '15 см', ans: '<' },
+          { labelA: '17 см', labelB: '1 дм 7 см', ans: '=' },
+          { labelA: '2 дм', labelB: '20 см', ans: '=' },
+          { labelA: '1 дм 9 см', labelB: '2 дм', ans: '<' }
         ];
         const item = options[Math.floor(Math.random() * options.length)];
-        return { question: `${item.labelA} ... ${item.labelB}`, correctAnswer: item.ans, isComparison: true };
+        return { question: `${item.labelA} ... ${item.labelB}`, correctAnswer: item.ans, isComparison: true, type: 'dm_cm_comparison' };
       } else {
-        const isAdd = Math.random() < 0.5;
-        if (isAdd) {
-          const a = Math.floor(Math.random() * 8) + 1;
-          const b = Math.floor(Math.random() * 8) + 1;
-          return { question: `${a} см + ${b} см = ? см`, correctAnswer: a + b, unit: 'см' };
+        const arithVariant = Math.floor(Math.random() * 5);
+        if (arithVariant === 0) {
+          const b = Math.floor(Math.random() * 9) + 1;
+          return { a: 10, b: b, operator: '+', question: `1 дм + ${b} см = ?`, correctAnswer: 10 + b, unit: 'см', firstUnit: 'дм', secondUnit: 'см', isComparison: false, type: 'dm_cm_add' };
+        } else if (arithVariant === 1) {
+          const b = Math.floor(Math.random() * 9) + 1;
+          return { a: 10 + b, b: 10, operator: '-', question: `1 дм ${b} см - 1 дм = ?`, correctAnswer: b, unit: 'см', firstUnit: 'дм_см', secondUnit: 'дм', isComparison: false, type: 'dm_cm_sub_dm' };
+        } else if (arithVariant === 2) {
+          const b = Math.floor(Math.random() * 9) + 1;
+          const a = 10 + b;
+          return { a: a, b: 10, operator: '-', question: `${a} см - 1 дм = ?`, correctAnswer: b, unit: 'см', firstUnit: 'см', secondUnit: 'дм', isComparison: false, type: 'cm_sub_dm' };
+        } else if (arithVariant === 3) {
+          const aList = [5, 6, 7, 8, 9, 10];
+          const a = aList[Math.floor(Math.random() * aList.length)];
+          return { a: a, b: 10, operator: '+', question: `${a} см + 1 дм = ?`, correctAnswer: a + 10, unit: 'см', firstUnit: 'см', secondUnit: 'дм', isComparison: false, type: 'cm_add_dm' };
         } else {
-          const a = Math.floor(Math.random() * 10) + 6;
-          const b = Math.floor(Math.random() * 5) + 1;
-          return { question: `${a} см - ${b} см = ? см`, correctAnswer: a - b, unit: 'см' };
+          const b = Math.floor(Math.random() * 9) + 1;
+          return { a: 10, b: b, operator: '-', question: `1 дм - ${b} см = ?`, correctAnswer: 10 - b, unit: 'см', firstUnit: 'дм', secondUnit: 'см', isComparison: false, type: 'dm_sub_cm' };
         }
       }
     }
