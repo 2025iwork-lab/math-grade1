@@ -140,7 +140,12 @@ export class MathEngine {
     } else {
       const b = Math.floor(Math.random() * 9) + 1;
       const a = 10 - b;
-      return { question: `${a} + ? = 10`, correctAnswer: b };
+      return {
+        a, operator: '+', b,
+        question: `${a} + ?`,
+        correctAnswer: b,
+        type: 'missing_addend', knownAddend: a, missingAddend: b
+      };
     }
   }
 

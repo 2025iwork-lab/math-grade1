@@ -613,7 +613,7 @@
                         // Вопрос без "= 10" — глобальный UI сам добавит "= [?]"
                         return {
                             a: firstTerm, operator: '+', b: secondTerm,
-                            question: `К ${firstTerm} прибавить, чтобы стало 10`,
+                            question: `${firstTerm} + ?`,
                             correctAnswer: secondTerm,
                             type: 'missing_addend', knownAddend: firstTerm, missingAddend: secondTerm
                         };
