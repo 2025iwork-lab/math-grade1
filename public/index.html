@@ -5264,8 +5264,6 @@
             const isTensProblem = currentRuleType === 'tens' || currentRuleType === 'topic_9' || (currentProblem && currentProblem.a >= 10 && currentProblem.a % 10 === 0 && currentProblem.b >= 10 && currentProblem.b % 10 === 0);
             const isComparison = currentRuleType === 'topic_1' || currentRuleType === 'comparison' || (currentProblem && currentProblem.isComparison);
             const isUpTo10 = currentRuleType === 'topic_2' || currentRuleType === 'up_to_10';
-            const isComposition10Topic = currentRuleType === 'topic_3' || currentRuleType === 'target_10' || currentRuleType === 'composition10';
-            const isMissingAddend = currentProblem && currentProblem.type === 'missing_addend';
 
             // Скрываем заголовок подсказки в карточках без визуальных рамок
             if (isTensProblem || isWordProblem || isQuantityProblem || isComparison || isUpTo10) {
@@ -5586,7 +5584,7 @@
             }
 
             // 6. До 10 (Сложение/вычитание до 10) - Запрещено менять визуализацию рамок
-            if (!isComposition10Topic && !isMissingAddend && (isUpTo10 || (a <= 10 && b <= 10 && (a + b) <= 10 && operator === '+') || (a <= 10 && operator === '-' && (a - b) >= 0 && a !== 10))) {
+            if (isUpTo10 || (a <= 10 && b <= 10 && (a + b) <= 10 && operator === '+') || (a <= 10 && operator === '-' && (a - b) >= 0 && a !== 10)) {
                 if (batteriesVisual) batteriesVisual.classList.add('hidden');
 
                 if (operator === '-') {
