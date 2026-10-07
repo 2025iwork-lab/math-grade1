@@ -4290,20 +4290,24 @@
                             }
                         }
                     } else if (type === 'topic_3' || type === 'target_10' || type === 'composition10') {
-                        // Состав 10
+                        // Состав 10: 50% вычитание (10 - b), 50% сложение (a + ? = 10)
+                        const isSubtraction = Math.random() < 0.5;
                         if (level === 1) {
                             const b = Math.floor(Math.random() * 5) + 1;
-                            const correctAnswer = 10 - b;
-                            return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer };
-                        } else if (level === 2) {
-                            const b = Math.floor(Math.random() * 9) + 1;
-                            const correctAnswer = 10 - b;
-                            return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer };
+                            if (isSubtraction) {
+                                return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
+                            } else {
+                                const a = 10 - b;
+                                return { a, operator: '+', b, question: `${a} + ?`, correctAnswer: b, type: 'missing_addend', missingAddend: b, knownAddend: a };
+                            }
                         } else {
-                            // Уровень 3: найди неизвестное слагаемое (состав 10)
                             const b = Math.floor(Math.random() * 9) + 1;
-                            const a = 10 - b;
-                            return { a, operator: '+', b, question: `${a} + ?`, correctAnswer: b, type: 'missing_addend', missingAddend: b, knownAddend: a };
+                            if (isSubtraction) {
+                                return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
+                            } else {
+                                const a = 10 - b;
+                                return { a, operator: '+', b, question: `${a} + ?`, correctAnswer: b, type: 'missing_addend', missingAddend: b, knownAddend: a };
+                            }
                         }
                     } else if (type === 'topic_4' || type === 'up_to_20_no_carry') {
                         // Числа до 20 без перехода

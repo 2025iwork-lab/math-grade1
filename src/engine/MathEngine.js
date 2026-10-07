@@ -131,21 +131,33 @@ export class MathEngine {
    * topic_3: Состав числа 10
    */
   _generateTarget10(level = 1) {
+    const isSubtraction = Math.random() < 0.5;
     if (level === 1) {
       const b = Math.floor(Math.random() * 5) + 1;
-      return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
-    } else if (level === 2) {
-      const b = Math.floor(Math.random() * 9) + 1;
-      return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
+      if (isSubtraction) {
+        return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
+      } else {
+        const a = 10 - b;
+        return {
+          a, operator: '+', b,
+          question: `${a} + ?`,
+          correctAnswer: b,
+          type: 'missing_addend', knownAddend: a, missingAddend: b
+        };
+      }
     } else {
       const b = Math.floor(Math.random() * 9) + 1;
-      const a = 10 - b;
-      return {
-        a, operator: '+', b,
-        question: `${a} + ?`,
-        correctAnswer: b,
-        type: 'missing_addend', knownAddend: a, missingAddend: b
-      };
+      if (isSubtraction) {
+        return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
+      } else {
+        const a = 10 - b;
+        return {
+          a, operator: '+', b,
+          question: `${a} + ?`,
+          correctAnswer: b,
+          type: 'missing_addend', knownAddend: a, missingAddend: b
+        };
+      }
     }
   }
 

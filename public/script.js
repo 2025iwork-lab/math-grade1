@@ -608,15 +608,19 @@
 
                 generateProblem(type) {
                     if (type === 'target_10') {
-                        const firstTerm = Math.floor(Math.random() * 9) + 1;
-                        const secondTerm = 10 - firstTerm;
-                        // Вопрос без "= 10" — глобальный UI сам добавит "= [?]"
-                        return {
-                            a: firstTerm, operator: '+', b: secondTerm,
-                            question: `${firstTerm} + ?`,
-                            correctAnswer: secondTerm,
-                            type: 'missing_addend', knownAddend: firstTerm, missingAddend: secondTerm
-                        };
+                        const isSubtraction = Math.random() < 0.5;
+                        const b = Math.floor(Math.random() * 9) + 1;
+                        if (isSubtraction) {
+                            return { a: 10, operator: '-', b, question: `10 - ${b}`, correctAnswer: 10 - b };
+                        } else {
+                            const a = 10 - b;
+                            return {
+                                a, operator: '+', b,
+                                question: `${a} + ?`,
+                                correctAnswer: b,
+                                type: 'missing_addend', knownAddend: a, missingAddend: b
+                            };
+                        }
                     } else if (type === 'over_ten') {
                         const firstTerm = Math.floor(Math.random() * 8) + 2;
                         const minSecondTerm = 11 - firstTerm;
