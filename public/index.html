@@ -5596,7 +5596,7 @@
                 } else {
                     batteryHintFormula.innerHTML = `
                         <div class="text-center font-sans font-extrabold text-base sm:text-lg">
-                            Пример: <span class="text-sky-400 font-bold">${a}</span> + <span class="text-emerald-400 font-bold">${b}</span> = <span class="text-indigo-400 font-bold">${answer}</span>
+                            Пример: <span class="text-sky-400 font-bold">${a}</span> + <span class="text-emerald-400 font-bold">${b}</span> = <span class="text-indigo-400 font-bold">${(a + b) === 10 ? 10 : answer}</span>
                         </div>
                     `;
                 }
