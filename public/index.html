@@ -6469,12 +6469,8 @@
                 updateMistakesBadge();
                 updateDifficultyBadge();
 
-                const savedScreen = localStorage.getItem('sokrat_active_screen');
-                if (savedScreen === 'screen-game' && currentRuleType) {
-                    startTopic(currentRuleType);
-                } else {
-                    showScreen(savedScreen || 'screen-topics');
-                }
+                // Принудительно открываем главное меню (витрину тренировок) при новом старте, сохраняя весь прогресс
+                showScreen('screen-topics');
             }
 
             function checkOnboarding() {
