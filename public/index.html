@@ -971,6 +971,20 @@
             transform: scale(0.93);
         }
 
+        /* Облачко речи и уведомлений (режим Престиж и похвалы) */
+        #robik-speech-bubble {
+            left: 0 !important;
+            right: 0 !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            width: fit-content !important;
+            max-width: min(88vw, 290px) !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+        }
+
         /* Карточка персонажа */
         .char-card {
             background: #ffffff;
@@ -1936,10 +1950,10 @@
 
                         <!-- Облачко речи Робика/Персонажа -->
                         <div id="robik-speech-bubble"
-                            class="hidden absolute -top-8 bg-white text-slate-800 text-xs font-black px-3 py-1.5 rounded-2xl shadow-lg border border-violet-300 animate-bounce z-30 pointer-events-none whitespace-nowrap">
-                            <span id="robik-speech-text">Супер! 🌟</span>
+                            class="hidden absolute bottom-full mb-1.5 inset-x-0 mx-auto w-fit max-w-[min(88vw,290px)] bg-white text-slate-800 text-[11px] sm:text-xs font-black px-3.5 py-2 rounded-2xl shadow-lg border border-violet-300 animate-bounce z-30 pointer-events-none text-center whitespace-normal leading-snug">
+                            <span id="robik-speech-text" class="block">Супер! 🌟</span>
                             <div
-                                class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-b border-r border-violet-300 rotate-45">
+                                class="absolute -bottom-1 left-1/2 -ml-1.5 w-3 h-3 bg-white border-b border-r border-violet-300 rotate-45">
                             </div>
                         </div>
 
